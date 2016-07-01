@@ -1,5 +1,6 @@
 package org.stowers.microscopy.ij1plugins;
 
+//Chris Wood - cjw@stowers.org
 /* This was copied from the ImageJ source at github
  */
 
