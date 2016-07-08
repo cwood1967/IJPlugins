@@ -14,7 +14,7 @@ import org.scijava.command.Previewable;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-@Plugin(type = Command.class, name = "Click for Roi",  menuPath="Plugins>Chris>Save As Tiff")
+@Plugin(type = Command.class, name = "Click for Roi",  menuPath="Plugins>Stowers>Chris>Save As Tiff")
 public class TiffSaverPlugin implements Command, Previewable {
 
     @Parameter
