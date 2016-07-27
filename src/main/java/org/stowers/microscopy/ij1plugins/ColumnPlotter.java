@@ -37,6 +37,8 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 
+import org.stowers.microscopy.utils.Histogram;
+
 import ij.measure.ResultsTable;
 
 /**
