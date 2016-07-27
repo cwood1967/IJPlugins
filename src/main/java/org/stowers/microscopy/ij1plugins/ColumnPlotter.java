@@ -120,7 +120,6 @@ public class ColumnPlotter implements ActionListener {
 
         }
 
-
         double barWidth = 0.8*(h.getEndX() - h.getStartX())/h.getNBins();
         dataset.addSeries("Hist", s);
         XYBarDataset xybar = new XYBarDataset(dataset, barWidth);
