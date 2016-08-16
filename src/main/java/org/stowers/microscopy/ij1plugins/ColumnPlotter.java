@@ -40,6 +40,7 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.stowers.microscopy.utils.Histogram;
 
 import ij.measure.ResultsTable;
+import org.stowers.microscopy.utils.HistogramPlot;
 
 /**
  * Created by cjw on 7/7/16.
@@ -111,83 +112,20 @@ public class ColumnPlotter implements ActionListener {
         DefaultXYDataset dataset = new DefaultXYDataset();
         double[] data = table.getColumnAsDoubles(colIndex);
         Histogram h = new Histogram(data, 20);
-        int[] hd = h.doHist();
+        double[] hd = h.doHist();
 
-        double[][] s = new double[2][hd.length];
-        for (int i = 0; i < hd.length; i++) {
-            double hx = h.binMean(i);
-            s[0][i] = hx;
-            s[1][i] = hd[i];
-//            series.add(new XYDataItem(hx, (double)hd[i]));
+        double[][] s = h.getHistogramArray(false);
 
-        }
+        HistogramPlot p = new HistogramPlot(h);
 
-        double barWidth = 0.8*(h.getEndX() - h.getStartX())/h.getNBins();
-        dataset.addSeries("Hist", s);
-        XYBarDataset xybar = new XYBarDataset(dataset, barWidth);
         String xlabel = headers[colIndex + nlabel];
-        chart = ChartFactory.createXYBarChart("Hist", xlabel, false, "Counts",  xybar);
+        chartpanel = p.makeChart("Histogram", xlabel, "Counts");
 
-        XYPlot plot = (XYPlot) chart.getPlot();
-
-        //CategoryAxis axis =  plot.getDomainAxis();
-        //axis.setTickMarkOutsideLength(3.0f);
-
-        XYBarRenderer renderer = (XYBarRenderer) plot.getRenderer();
-        renderer.setBarPainter(new StandardXYBarPainter());
-        renderer.setSeriesPaint(0, Color.orange);
-        plot.setBackgroundPaint(Color.white);
-        plot.setDomainGridlinePaint(Color.lightGray);
-        plot.setRangeGridlinePaint(Color.lightGray);
-        plot.setOutlineVisible(false);
-        plot.setDomainAxisLocation(AxisLocation.BOTTOM_OR_LEFT);
-        plot.setRangeAxisLocation(AxisLocation.BOTTOM_OR_LEFT);
-
-        chartpanel = new ChartPanel(chart);
         mainPane.add(chartpanel);
         chartpanel.setVisible(true);
 
     }
 
-    protected void makePlot(int colIndex) {
-
-        if ( chartpanel != null) {
-            chartpanel.setVisible(false);
-            mainPane.remove(chartpanel);
-            System.out.println("Cleanup");
-        } else {
-            System.out.println("Null");
-        }
-        XYSeries dataset = new XYSeries(headers[colIndex + 1]);
-        XYSeriesCollection c = new XYSeriesCollection();
-        double[] data = table.getColumnAsDoubles(colIndex);
-        Histogram h = new Histogram(data, 10);
-        int[] hd = h.doHist();
-        for (int i = 0; i < hd.length; i++) {
-            dataset.add(i, hd[i]);
-        }
-
-        c.addSeries(dataset);
-
-
-
-        chart = ChartFactory.createScatterPlot("Title", "x" + (colIndex + 1),
-                headers[colIndex + 1], c);
-
-        chartpanel = new ChartPanel(chart);
-        mainPane.add(chartpanel);
-        chartpanel.setVisible(true);
-
-//        if (dp != null) {
-//            dp.setVisible(false);
-//            mainPane.remove(dp);
-//        }
-//        dp = plotPanel(colIndex);
-//        System.out.println("--" + table.getColumnHeading(colIndex));
-//        mainPane.add(dp, BorderLayout.CENTER);
-//        dp.setVisible(true);
-
-    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
