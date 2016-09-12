@@ -1,6 +1,7 @@
 package org.stowers.microscopy.ij1plugins;
 
 import ij.ImagePlus;
+import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import org.scijava.command.Command;
 import org.scijava.command.Previewable;
@@ -26,14 +27,18 @@ public class ImageHistogram implements Command, Previewable {
 
         ImageProcessor ip = imp.getProcessor();
 
+        FloatProcessor fp = ip.convertToFloatProcessor();
         double[] dpx = new double[imp.getWidth()*imp.getHeight()];
-
-        for (int i = 0; i < dpx.length; i++) {
-            dpx[i] = (double)ip.get(i);
+        float[] px = (float[])fp.getPixels();
+        for (int i = 0; i < px.length; i++) {
+            dpx[i] = (double)px[i];
         }
 
         Histogram h = new Histogram(dpx, 256);
         HistogramPlot p = new HistogramPlot(h);
+        p.setTitle("Image Histogram");
+        p.setXLabel("Intensity");
+        p.setYLabel("Number");
         p.plotHist();
 //        p.setLogY(true);
 //        p.plotHist();

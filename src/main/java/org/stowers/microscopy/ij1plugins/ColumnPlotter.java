@@ -1,41 +1,15 @@
 package org.stowers.microscopy.ij1plugins;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.List;
 
-//import de.erichseifert.gral.plots.XYPlot;
-//import de.erichseifert.gral.ui.DrawablePanel;
-//import de.erichseifert.gral.data.DataSeries;
-//import de.erichseifert.gral.data.DataTable;
-//import de.erichseifert.gral.ui.InteractivePanel;
 
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.AxisLocation;
-import org.jfree.chart.axis.CategoryAxis;
-import org.jfree.chart.axis.CategoryLabelPositions;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.plot.CategoryPlot;
-import org.jfree.chart.plot.Plot;
-import org.jfree.chart.renderer.category.BarRenderer;
-import org.jfree.chart.renderer.category.StandardBarPainter;
-import org.jfree.chart.renderer.xy.StandardXYBarPainter;
-import org.jfree.chart.renderer.xy.XYBarRenderer;
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
-import org.jfree.data.statistics.HistogramDataset;
 import org.jfree.data.xy.*;
-import org.jfree.ui.ApplicationFrame;
-import org.jfree.ui.RefineryUtilities;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+
 
 import org.stowers.microscopy.utils.Histogram;
 
@@ -67,6 +41,7 @@ public class ColumnPlotter implements ActionListener {
         this.table = table;
         headers = table.getHeadings();
         mainPane = new JPanel(new BorderLayout());
+
         String label = table.getLabel(0);
         if (label == null) {
             System.out.println("No label");
@@ -86,7 +61,7 @@ public class ColumnPlotter implements ActionListener {
 //        chartpanel = new ChartPanel(chart);
 
         panel.setSize(120, 50);
-        makeHistogram(3);
+        makeHistogram(headers[1]);
         mainPane.add(panel, BorderLayout.WEST);
         //mainPane.add(dp);
         mainPane.setBorder(BorderFactory.createEmptyBorder(25,25,25,25));
@@ -99,7 +74,8 @@ public class ColumnPlotter implements ActionListener {
 
     }
 
-    protected void makeHistogram(int colIndex) {
+
+    protected void makeHistogram(String iheader) {
 
         if ( chartpanel != null) {
             chartpanel.setVisible(false);
@@ -109,8 +85,13 @@ public class ColumnPlotter implements ActionListener {
             System.out.println("Null");
         }
 
+        int colIndex = table.getColumnIndex(iheader);
         DefaultXYDataset dataset = new DefaultXYDataset();
         double[] data = table.getColumnAsDoubles(colIndex);
+
+        if (data == null) {
+            return;
+        }
         Histogram h = new Histogram(data, 20);
         double[] hd = h.doHist();
 
@@ -118,7 +99,7 @@ public class ColumnPlotter implements ActionListener {
 
         HistogramPlot p = new HistogramPlot(h);
 
-        String xlabel = headers[colIndex + nlabel];
+        String xlabel = iheader; //headers[colIndex + nlabel];
         chartpanel = p.makeChart("Histogram", xlabel, "Counts");
 
         mainPane.add(chartpanel);
@@ -132,8 +113,9 @@ public class ColumnPlotter implements ActionListener {
         JComboBox<String> cb = (JComboBox<String>)e.getSource();
         System.out.println(cb.getSelectedIndex() + "  " + cb.getSelectedItem());
         int index = cb.getSelectedIndex() + 0;
+        String iheader = (String)cb.getSelectedItem();
         if (index >= nlabel) {
-            makeHistogram(index - nlabel);
+            makeHistogram(iheader);
         }
     }
 
