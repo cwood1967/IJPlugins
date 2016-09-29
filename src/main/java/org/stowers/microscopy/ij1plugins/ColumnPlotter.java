@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Arrays;
 
 
 import org.jfree.chart.ChartPanel;
@@ -93,7 +94,7 @@ public class ColumnPlotter implements ActionListener {
             return;
         }
         Histogram h = new Histogram(data, 20);
-        double[] hd = h.doHist();
+//        double[] hd = h.doHist();
 
         double[][] s = h.getHistogramArray(false);
 
