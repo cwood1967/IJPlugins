@@ -791,8 +791,10 @@ public class FastFileSaver {
             appendEscapedLine(sb, "info="+cal.info);
 
         // get invertY flag
-        if (cal.getInvertY())
-            sb.append("inverty=true\n");
+
+//        if (cal.getInvertY()) {
+//            sb.append("inverty=true\n");
+//        }
 
         if (saveName)
             appendEscapedLine(sb, "name="+imp.getTitle());

@@ -103,6 +103,7 @@ public class ClickForRoi
     }
 
     public static void main(String[] args) {
+        System.out.println("Running");
         final ImageJ imagej = net.imagej.Main.launch(args);
     }
 
