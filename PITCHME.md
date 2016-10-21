@@ -1,4 +1,4 @@
-# ImageJ Plugins
+## ImageJ Plugins
 
 * ClickForRoi
 * ColumnPlotter
@@ -12,3 +12,5 @@
 
 Set the size for a rectangular ROI then click the image to place ROIs.
 ROIs will be added to the ROI Manager.
+
+#VSLIDE?gist=1b8670bf4da011b736a26b72837c5f43   
