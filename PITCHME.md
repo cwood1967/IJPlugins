@@ -5,7 +5,8 @@
 * TiffSaverPlugin
 * Threshold (adaptive)
 * ImageHistogram
-# HSLIDE
+#HSLIDE
+
 
 ## ClickForRoi
 
