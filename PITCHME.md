@@ -36,4 +36,19 @@ ROIs will be added to the ROI Manager.
     
  ```
 
+#VSLIDE
+
+```Scala
+// Scala Code Block
+
+HashMap params = HashMap(n -> 10, mean -> 5)
+
+// Define executable for R stats#rnorm function call.
+OCPUTask task = OCPU.R()
+                    .pkg("stats")
+                    .function("rnorm")
+                    .input(params.asJava)
+                    .library()
+```
+
 #VSLIDE?gist=1b8670bf4da011b736a26b72837c5f43   
