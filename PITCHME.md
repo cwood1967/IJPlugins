@@ -13,9 +13,9 @@
 Set the size for a rectangular ROI then click the image to place ROIs.
 ROIs will be added to the ROI Manager.
 
-```
+```Java
 //java code block
-
+    
  public void run() {
         window = imp.getWindow();
         canvas = window.getCanvas();
