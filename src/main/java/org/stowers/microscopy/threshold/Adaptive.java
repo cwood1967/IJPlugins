@@ -29,7 +29,7 @@ public class Adaptive {
         ImageProcessor ip = imp.getProcessor();
         FloatProcessor fp = null;
         fp = ip.convertToFloatProcessor();
-
+        
         FloatProcessor fp0 = (FloatProcessor)fp.duplicate();
         double max  = fp.getStatistics().max;
         float[] pixels = (float[])fp.getPixels();
@@ -44,8 +44,6 @@ public class Adaptive {
         GaussianBlur gb = new GaussianBlur();
         float s = (blockSize - 1)/6.f;
         gb.blurGaussian(fp, s, s , 0.01);
-
-
 
         byte[] resPix = new byte[pixels.length];
         for (int i = 0; i < pixels.length; i++) {
