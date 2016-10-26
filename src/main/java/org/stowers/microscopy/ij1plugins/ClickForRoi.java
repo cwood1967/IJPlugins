@@ -41,13 +41,7 @@ public class ClickForRoi
 
     RoiManager manager;
     public void run() {
-
-//        String cp = System.getProperty("java.class.path");
-//        System.out.println(cp);
-
-        for (String s : cp.split(":")) {
-            System.out.println(s);
-        }
+        
         window = imp.getWindow();
         canvas = window.getCanvas();
         canvas.addMouseListener(this);
