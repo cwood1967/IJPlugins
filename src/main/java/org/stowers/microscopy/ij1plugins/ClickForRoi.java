@@ -15,6 +15,7 @@ import org.scijava.plugin.Plugin;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Properties;
 
 
 /**
@@ -40,7 +41,7 @@ public class ClickForRoi
 
     RoiManager manager;
     public void run() {
-
+        
         window = imp.getWindow();
         canvas = window.getCanvas();
         canvas.addMouseListener(this);
