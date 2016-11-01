@@ -40,6 +40,7 @@ public class ClickForRoi
     ImageCanvas canvas;
 
     RoiManager manager;
+
     public void run() {
         
         window = imp.getWindow();
@@ -106,6 +107,7 @@ public class ClickForRoi
     public static void main(String[] args) {
         System.out.println("Running");
         final ImageJ imagej = net.imagej.Main.launch(args);
+
     }
 
 
