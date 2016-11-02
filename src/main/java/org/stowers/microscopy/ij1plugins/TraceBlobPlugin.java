@@ -48,7 +48,7 @@ import org.stowers.microscopy.ij1plugins.tableutils.CellTrajectory;
 import org.stowers.microscopy.ij1plugins.tableutils.MotherIdTable;
 import org.stowers.microscopy.ij1plugins.tableutils.ResultsUtils;
 
-@Plugin(type = Command.class, name = "Trace Blobs",  menuPath="Plugins>Chris>NotReady>Trace Blobs")
+@Plugin(type = Command.class, name = "Lineage Explorer",  menuPath="Plugins>Stowers>Chris>LineageExplorer")
 public class TraceBlobPlugin implements Previewable, Command,
                                         ActionListener, MouseListener, ij.ImageListener,
                                         DatasetChangeListener, ChartMouseListener {
@@ -180,9 +180,15 @@ public class TraceBlobPlugin implements Previewable, Command,
         currentmark[1][1] = .2*imp.getProcessor().getStatistics().max;
         dataset.addSeries("currentmark", currentmark);
 
-
-
         chart = ChartFactory.createXYLineChart("Intensity vs Time", "Time", "Intensity", dataset);
+        XYPlot plot = (XYPlot)chart.getXYPlot();
+        plot.getRenderer().setSeriesPaint(0, Color.darkGray);
+        plot.getRenderer().setSeriesPaint(1, Color.darkGray);
+        plot.getRenderer().setSeriesPaint(2, Color.darkGray);
+        plot.getRenderer().setSeriesVisibleInLegend(0, false);
+        plot.getRenderer().setSeriesVisibleInLegend(1, false);
+        plot.getRenderer().setSeriesVisibleInLegend(2, false);
+
 //        chart.getXYPlot().setDomainCrosshairVisible(true);
 //        chart.getXYPlot().setRangeCrosshairVisible(true);
         chartpanel = new ChartPanel(chart);
