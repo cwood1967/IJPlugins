@@ -177,7 +177,7 @@ public class TraceBlobPlugin implements Previewable, Command,
         currentmark[0][0] = currentFrame;
         currentmark[0][1] = currentFrame;
         currentmark[1][0] = 0;
-        currentmark[1][1] = .2*imp.getProcessor().getStatistics().max;
+        currentmark[1][1] = .2*imp.getProcessor().getStatistics().median;
         dataset.addSeries("currentmark", currentmark);
 
         chart = ChartFactory.createXYLineChart("Intensity vs Time", "Time", "Intensity", dataset);
@@ -340,8 +340,8 @@ public class TraceBlobPlugin implements Previewable, Command,
         int currentFrame = ximp.getCurrentSlice();
         currentmark[0][0] = currentFrame;
         currentmark[0][1] = currentFrame;
-//        currentmark[1][0] = 0;
-//        currentmark[1][1] = imp.getProcessor().getStatistics().max;
+        currentmark[1][0] = 0;
+//        currentmark[1][1] = .25*imp.getProcessor().getStatistics().max;
         dataset.removeSeries("currentmark");
         dataset.addSeries("currentmark", currentmark);
         if((currentId >= 0) && roi != null) {
