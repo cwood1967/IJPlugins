@@ -28,6 +28,8 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -51,7 +53,8 @@ import org.stowers.microscopy.ij1plugins.tableutils.ResultsUtils;
 @Plugin(type = Command.class, name = "Lineage Explorer",  menuPath="Plugins>Stowers>Chris>LineageExplorer")
 public class TraceBlobPlugin implements Previewable, Command,
                                         ActionListener, MouseListener, ij.ImageListener,
-                                        DatasetChangeListener, ChartMouseListener {
+                                        DatasetChangeListener, ChartMouseListener,
+                                        ChangeListener {
 
 
     static {
@@ -74,6 +77,7 @@ public class TraceBlobPlugin implements Previewable, Command,
     JFrame frame;
     JPanel toppanel;
     JPanel mainPane;
+    JPanel plotPane;
     JLabel label;
     JComboBox<String> nonImage;
     JButton ok;
@@ -81,6 +85,8 @@ public class TraceBlobPlugin implements Previewable, Command,
 
     ChartPanel chartpanel;
     JFreeChart chart;
+
+    JSlider slider;
 
     String[] frameTitles;
     String[] imageTitles;
@@ -139,12 +145,17 @@ public class TraceBlobPlugin implements Previewable, Command,
         toppanel.add(nonImage);
         toppanel.add(ok);
         toppanel.add(reset);
-//        toppanel.add(dumb);
 
         west.add(toppanel);
         west.add(lower);
         mainPane.add(west, BorderLayout.WEST);
+        plotPane = new JPanel();
+        plotPane.setLayout(new BoxLayout(plotPane, BoxLayout.Y_AXIS));
         makeplot();
+        slider = new JSlider(JSlider.HORIZONTAL, 1, imp.getNFrames(), imp.getCurrentSlice());
+        slider.addChangeListener(this);
+        plotPane.add(slider);
+        mainPane.add(plotPane, BorderLayout.CENTER);
 //        frame.add(mainPane);
         frame.setContentPane(mainPane);
         frame.setSize(1000, 600);
@@ -173,12 +184,12 @@ public class TraceBlobPlugin implements Previewable, Command,
         framemark[1][1] = .2*imp.getProcessor().getStatistics().max;
         dataset.addSeries("mark", framemark);
 
-        currentmark = new double[2][2];
-        currentmark[0][0] = currentFrame;
-        currentmark[0][1] = currentFrame;
-        currentmark[1][0] = 0;
-        currentmark[1][1] = .2*imp.getProcessor().getStatistics().median;
-        dataset.addSeries("currentmark", currentmark);
+//        currentmark = new double[2][2];
+//        currentmark[0][0] = currentFrame;
+//        currentmark[0][1] = currentFrame;
+//        currentmark[1][0] = 0;
+//        currentmark[1][1] = .2*imp.getProcessor().getStatistics().median;
+//        dataset.addSeries("currentmark", currentmark);
 
         chart = ChartFactory.createXYLineChart("Intensity vs Time", "Time", "Intensity", dataset);
         XYPlot plot = (XYPlot)chart.getXYPlot();
@@ -189,12 +200,14 @@ public class TraceBlobPlugin implements Previewable, Command,
         plot.getRenderer().setSeriesVisibleInLegend(1, false);
         plot.getRenderer().setSeriesVisibleInLegend(2, false);
 
-//        chart.getXYPlot().setDomainCrosshairVisible(true);
+        chart.getXYPlot().setDomainCrosshairVisible(true);
+
 //        chart.getXYPlot().setRangeCrosshairVisible(true);
         chartpanel = new ChartPanel(chart);
         chartpanel.addChartMouseListener(this);
+
         chartpanel.setVisible(true);
-        mainPane.add(chartpanel, BorderLayout.CENTER);
+        plotPane.add(chartpanel, BorderLayout.CENTER);
 
     }
 
@@ -219,6 +232,14 @@ public class TraceBlobPlugin implements Previewable, Command,
         if (e.getSource() == reset) {
             System.out.println("!!!!! Resetting !!!!");
             resetPlot();
+        }
+    }
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        if (e.getSource() == slider) {
+//            imp.setSlice(imp.getCurrentSlice() + 1);
+//            System.out.println(slider.getValue());
+            imp.setSlice(slider.getValue());
         }
     }
 
@@ -338,17 +359,18 @@ public class TraceBlobPlugin implements Previewable, Command,
     public void imageUpdated(ImagePlus ximp) {
         System.out.println("Slice: " + ximp.getCurrentSlice());
         int currentFrame = ximp.getCurrentSlice();
-        currentmark[0][0] = currentFrame;
-        currentmark[0][1] = currentFrame;
-        currentmark[1][0] = 0;
+//        currentmark[0][0] = currentFrame;
+//        currentmark[0][1] = currentFrame;
+//        currentmark[1][0] = 0;
 //        currentmark[1][1] = .25*imp.getProcessor().getStatistics().max;
-        dataset.removeSeries("currentmark");
-        dataset.addSeries("currentmark", currentmark);
+//        dataset.removeSeries("currentmark");
+//        dataset.addSeries("currentmark", currentmark);
         if((currentId >= 0) && roi != null) {
             int[] xy = cellPositionFromClick(currentId, currentFrame - 1);
             roi.setLocation(xy[0], xy[1]);
         }
         imp.setRoi((Roi)roi);
+        chart.getXYPlot().setDomainCrosshairValue(currentFrame);
         System.out.println("Image Updated");
     }
 
