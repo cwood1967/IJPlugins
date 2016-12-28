@@ -6,7 +6,7 @@ package org.stowers.microscopy.ij1plugins;
 
 
 import ij.ImageListener;
-import ij.ImagePlus;
+
 import ij.IJ;
 import ij.WindowManager;
 import ij.gui.*;
@@ -26,6 +26,8 @@ import org.scijava.command.Command;
 import org.scijava.command.Previewable;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+
+import ij.ImagePlus;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -62,7 +64,7 @@ public class TraceBlobPlugin implements Previewable, Command,
     }
 
     @Parameter
-    ImagePlus imp;
+    ImagePlus imp = null;
 
 //    @Parameter
 //    ResultsTable resultsTable;
@@ -454,11 +456,11 @@ public class TraceBlobPlugin implements Previewable, Command,
         final ImageJ imagej = net.imagej.Main.launch(args);
         String xls = "/Volumes/projects/jru/public/Baumann/10102016 baumann TL 4/Analysis/X1/MotherIdTable.xls";
         String image = "/Volumes/projects/jru/public/Baumann/10102016 baumann TL 4/Analysis/Colony1-RBS-Binned-C1-SUM_ConcatenatedStacks-1.tif";
-        ij.io.Opener opener = new ij.io.Opener();
-        opener.open(xls);
-        opener.open(image);
-
-        imagej.command().run(TraceBlobPlugin.class, true);
+//        ij.io.Opener opener = new ij.io.Opener();
+//        opener.open(xls);
+//        opener.open(image);
+//
+//        imagej.command().run(TraceBlobPlugin.class, true);
 
     }
 

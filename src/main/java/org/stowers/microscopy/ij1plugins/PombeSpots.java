@@ -11,6 +11,7 @@ import ij.plugin.filter.MaximumFinder;
 import ij.process.AutoThresholder;
 import ij.process.ByteProcessor;
 import ij.text.TextPanel;
+import net.imagej.patcher.LegacyInjector;
 import net.imagej.ImageJ;
 import net.imagej.ops.Ops;
 import ij.measure.ResultsTable;
@@ -37,8 +38,14 @@ import static ij.WindowManager.getImageTitles;
 @Plugin(type = Command.class, name = "Click for Roi",  menuPath="Plugins>Chris>NotReady>PombeSpots")
 public class PombeSpots implements  Previewable, Command  {
 
+	static {
+        LegacyInjector.preinit();
+    }
+	
     @Parameter
     ImagePlus sumImp = null;
+    
+    @Parameter
     ImagePlus maxImp = null;
 
     @Parameter(label = "Radius of large blur")
@@ -236,8 +243,8 @@ public class PombeSpots implements  Previewable, Command  {
         String dir = "/Volumes/projects/jjl/public/lili pan/12082016/";
         String file = "MAX UNMIXED pp1735-6h-tile-_2016_12_08__16_49_40.lsm.tif";
         String image = dir + file;
-        ij.io.Opener opener = new ij.io.Opener();
-        opener.open(image);
+//        ij.io.Opener opener = new ij.io.Opener();
+//        opener.open(image);
 
 //        imagej.command().run(PombeSpots.class, true);
 
