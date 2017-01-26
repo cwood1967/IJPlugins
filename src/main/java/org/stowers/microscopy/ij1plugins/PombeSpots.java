@@ -6,6 +6,8 @@ package org.stowers.microscopy.ij1plugins;
 
 import ij.IJ;
 import ij.WindowManager;
+import ij.io.FileInfo;
+import ij.io.Opener;
 import ij.plugin.Thresholder;
 import ij.plugin.filter.MaximumFinder;
 import ij.process.AutoThresholder;
@@ -29,6 +31,8 @@ import org.stowers.microscopy.ij1plugins.tableutils.ResultsUtils;
 import org.stowers.microscopy.org.stowers.microscopy.utils.PombeSpot;
 
 import java.awt.event.MouseListener;
+import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -60,6 +64,10 @@ public class PombeSpots implements  Previewable, Command  {
 
     ImageProcessor blurredIp;
 
+    FileInfo maxFileInfo;
+    FileInfo sumFileInfo;
+    String analysisPath;
+
     ArrayList<PombeSpot> spots;
     @Override
     public void run() {
@@ -88,8 +96,80 @@ public class PombeSpots implements  Previewable, Command  {
             }
         }
 
+        sumFileInfo = sumImp.getOriginalFileInfo();
+        maxFileInfo = maxImp.getOriginalFileInfo();
+        String dir =sumFileInfo.directory;
+        String name = sumFileInfo.fileName;
+        makeAnalysisDir(dir, "Analysis");
+
+        File imageDir = new File(dir);
+
+        String[][] names = getMatchingFiles(imageDir, "MAX_UNMIXED", "SUM_UNMIXED");
+
+        sumImp.close();
+        maxImp.close();
+        Opener opener = new Opener();
+        for (int i = 0; i < names.length; i++) {
+
+            maxImp = opener.openImage(names[i][0]);
+            sumImp = opener.openImage(names[i][1]);
+            sumFileInfo = sumImp.getOriginalFileInfo();
+            maxFileInfo = maxImp.getOriginalFileInfo();
+            go();
+            maxImp.close();
+            sumImp.close();
+        }
+    }
+
+    public void makeAnalysisDir(String basedir, String aname) {
+
+        analysisPath = basedir + "/" + aname;
+        File adir = new File(analysisPath);
+        if (!adir.exists()) {
+            adir.mkdir();
+        }
+
+    }
+
+
+    private String[][] getMatchingFiles(File dir, String maxPattern, String sumPattern) {
+
+        String[][] res;
+        String[] names = dir.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+
+                if (name.startsWith(maxPattern)) {
+                    return true;
+                } else{
+                    return false;
+                }
+            }
+        });
+
+        res = new String[names.length][2];
+        for (int i = 0; i < names.length; i++) {
+            res[i][0] = dir + "/" + names[i];
+            String s = dir + "/" + names[i].replace(maxPattern, sumPattern);
+            File sf = new File(s);
+//            res[i][1] = s;
+            if (sf.exists()) {
+                res[i][1] = s;
+            }
+        }
+
+        return res;
+    }
+
+    public void go() {
+
+
         sumImp.setSlice(2);
         maxImp.setSlice(2);
+
+        String title = sumImp.getTitle();
+        String[] split = title.split(" ");
+        String analysisName = split[1] + "_" + split[2] + "_" + split[3];
         channel = maxImp.getCurrentSlice();
         blurredIp = blur(largeRadius);
 
@@ -154,32 +234,18 @@ public class PombeSpots implements  Previewable, Command  {
             k++;
         }
 
-        table.show("The Results");
+        table.show(analysisName);
+        table.save(analysisPath + "/" + analysisName + ".xls");
 
         for (int key : peakMap.keySet()) {
             System.out.println(key + " " + peakMap.get(key));
         }
-//        System.out.println(spots.size() + " " + blurredThreshold);
-//        PombeSpot s1 = spots.get(dotnum);
-//        int x = s1.getX();
-//        int y = s1.getY();
-//        System.out.println(x + " " + y);
-//        ImageProcessor cip = s1.getMaxPatch();
-//
-//        ImagePlus cImp = new ImagePlus("Temp Patch", cip);
-//        maxImp.setRoi(x -10,y -10, 20,20);
-//        cImp.show();
-//
-//        ImagePlus mImp = new ImagePlus("Mask Patch", s1.getMaskPatch());
-//        mImp.show();
+
 //
         ImagePlus bImp = new ImagePlus("Blur Patch", blurredIp);
         bImp.show();
 //
-//        ImagePlus sImp = new ImagePlus("Blur Patch", s1.getSumPatch());
-//        sImp.show();
-//
-//        s1.findPeaks();
+
 
     }
 
