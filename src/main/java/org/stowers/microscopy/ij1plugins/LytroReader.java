@@ -19,6 +19,7 @@ import ij.process.FloatProcessor;
 import ij.process.ShortProcessor;
 import ij.process.ImageProcessor;
 import net.imagej.ImageJ;
+import ij.plugin.filter.Rotator;
 
 public class LytroReader {
 
@@ -30,6 +31,9 @@ public class LytroReader {
     int size = 7728*5368;
     int width = 7728;
     int height = 5368;
+    CompositeImage compImp;
+    short[][] debayer;
+    ImageStack bayerStack;
 
     public LytroReader(String pathname, int offset) {
 
@@ -71,15 +75,28 @@ public class LytroReader {
             index += 4;
         }
 
-        ImageProcessor ip = new ShortProcessor(7728, 5368);
-        ip.setPixels(image);
-        ImagePlus imp = new ImagePlus("Nice");
-        imp.setProcessor(ip);
-        imp.show();
+//        ImageProcessor ip = new ShortProcessor(7728, 5368);
+//        ip.setPixels(image);
+//        ImagePlus imp = new ImagePlus("Nice");
+//        imp.setProcessor(ip);
+//        imp.show();
         rawImage = image;
         return null;
     }
 
+    public void rotate(double angle) {
+
+        bayerStack.getProcessor(1).rotate(angle);
+        bayerStack.getProcessor(2).rotate(angle);
+        bayerStack.getProcessor(3).rotate(angle);
+
+        ImagePlus tempImp = new ImagePlus("Rotated");
+        tempImp.setStack(bayerStack);
+        compImp = new CompositeImage(tempImp, CompositeImage.COMPOSITE);
+
+//        compImp.show();
+
+    }
     public int[] getImage() {
 
         short[] image = new short[size];
@@ -110,33 +127,7 @@ public class LytroReader {
             index += 4;
 
         }
-//        for (int bit = 0; bit < 8*fileBytes.length; bit++) {
-//
-//            iby = bit/8;
-//            b = fileBytes[iby];
-//            tmp = b >> (7 - bit % 8) & 1;
-//            if (index < 8) {
-//                pixel += tmp << (7 - index);
-//                index++;
-//            } else {
-//                pixel += tmp << (index - 1);
-//                index++;
-//            }
-//            if (index % 10 == 0) {
-//                if (pixel == 0) {
-//                    counter++;
-//                }
-//                image[pixelIndex] = (short)pixel;
-//                pixelIndex++;
-//                pixel = 0;
-//                tmp = 0;
-//                index = 0;
-//            }
-//            if (pixelIndex >= image.length) {
-//                iby = bit;
-//                break;
-//            }
-//        }
+
         System.out.println(image.length + " " + pixelIndex + " " + iby);
         System.out.println(counter);
         System.out.println(size);
@@ -152,31 +143,66 @@ public class LytroReader {
 
     public void sample(int xoffset, int yoffset) {
 
-        int sx = 14;
-        int sy = 13;
-        short[] s = new short[(int)(size/sx/sy)];
+        double sx = 14.283;
+        double sy = 12.369;
 
+
+        int wx = (int)(width/sx);
+        int wy = (int)(height/sy);
+        System.out.println(wx + " " + wy + " " + wx*wy);
+        short[] s = new short[wx*wy];
+        short[] sa = new short[wx*wy];
+        short[] sb = new short[wx*wy];
         int index = 0;
         int rawIndex = 0;
 
-        int xoff = 0;
+        double xoff = 0;
         int yoff = 0;
         boolean nx = true;
-        for (int j = yoffset; j < (height - sy/2); j += sy) {
+
+        for(int j = 0; j < wy; j++) {
+//        for (double j = yoffset; j < (height - sy/2); j += sy) {
+
             if (nx) {
                 xoff = 0;
             }
             else {
-                xoff = 7;
+                xoff = sx/2.;
             }
             nx = !nx;
-            for (int i = xoffset; i < (width - sx/2); i += sx) {
-                int k = (int)(j*width + i + xoff);
-                s[index] = rawImage[k];
-//                System.out.println(i + " " + j + " " + k + " " + index);
 
-                if ((i + xoff + offset) >= width) break;
-                index++;
+            double ychip = Math.round(yoffset + j*sy);
+
+//            for (double i = xoffset; i < (width - sx/2); i += sx) {
+            for (int i = 0; i < wx; i++) {
+
+                double xchip = Math.round(xoff + xoffset + i*sx);
+                int k = (int)(ychip*width + xchip);
+                index = j*wx + i;
+                if (index >= s.length) break;
+                s[index] = (short)((debayer[0][k]));
+                sa[index] = (short)((debayer[0][k - 4]));
+                sb[index] = (short)((debayer[0][k + 4]));
+//                s[index] += (short)((debayer[0][k - 1]));
+//                s[index] += (short)((debayer[0][k + 1]));
+//                s[index] += (short)((debayer[0][k + width]));
+//                s[index] += (short)((debayer[0][k - width]));
+//                s[index] += (short)((debayer[0][k + width + 1]));
+//                s[index] += (short)((debayer[0][k + width - 1]));
+//                s[index] += (short)((debayer[0][k - width + 1]));
+//                s[index] += (short)((debayer[0][k - width - 1]));
+
+                if (i < 2) {
+                    System.out.println(i + " " + j + " " + k + " " + index + " " + xchip + " " + ychip);
+                    System.out.println(k % width + " " + k / width);
+                }
+//                index++;
+                if ((i + xoff + offset) >= width) {
+                    System.out.println(i + " " + j + " " + k + " " + index + " " + xchip + " " + ychip);
+
+                    break;
+                }
+
                 if (index >= s.length) break;
 
             }
@@ -185,22 +211,36 @@ public class LytroReader {
         }
 
         ImageProcessor ip = new ShortProcessor((int)(width/sx), (int)(height/sy));
+        ImageProcessor aip = new ShortProcessor((int)(width/sx), (int)(height/sy));
+        ImageProcessor bip = new ShortProcessor((int)(width/sx), (int)(height/sy));
         ip.setPixels(s);
+        aip.setPixels(sa);
+        bip.setPixels(sb);
         ImagePlus imp = new ImagePlus("Sample");
-        imp.setTitle("Sample");
+        imp.setTitle("Sample" + Integer.toString(yoffset));
         imp.setProcessor(ip);
         imp.show();
+
+//        ImagePlus aimp = new ImagePlus("Sample A" + xoffset);
+//        aimp.setTitle("Sample A");
+//        aimp.setProcessor(aip);
+//        aimp.show();
+//
+//        ImagePlus bimp = new ImagePlus("Sample B" + xoffset);
+//        bimp.setTitle("Sample B");
+//        bimp.setProcessor(bip);
+//        bimp.show();
 
     }
 
     public void filterBayer() {
 
-        short[] r = new short[size/4];
-        short[] gr = new short[size/4];
-        short[] gb = new short[size/4];
-        short[] b = new short[size/4];
+        short[] r = new short[size];
+        short[] gr = new short[size];
+        short[] gb = new short[size];
+        short[] b = new short[size];
 
-        int index = 0;
+        debayer = new short[3][size];
         int rawIndex;
         int irx;
 
@@ -208,37 +248,114 @@ public class LytroReader {
 
         int counter = 0;
 
-        for (int j = 0; j < height; j += 2) {
-            for (int i = 0; i < width; i += 2) {
-                    int k = j*width + i;
+        // work on gr (top left pixel)
+        int index = 0;
+        for (int j = 0; j < height - 2; j += 2) {
+            for (int i = 0; i < width - 2; i += 2) {
+                int k = j*width + i;
 
-                    gr[index] = rawImage[k];
-                    r[index] = rawImage[k + 1];
-                    b[index] = rawImage[k + width];
-                    gr[index] = rawImage[k + width + 1];
-                    index++;
+                gr[k] = rawImage[k];
+
+                if (i < (width -2) || j < (height - 2)) {
+                    gr[k + 1] = (short) ((rawImage[k] + rawImage[k + 2]) / 2);
+                    gr[k + width] = (short) ((rawImage[k] + rawImage[k + 2 * width]) / 2);
+                    gr[k + width + 1] = (short) ((rawImage[k] + rawImage[k + 2 * width] +
+                            rawImage[k + 2] + rawImage[k + 2 * width + 2]) / 4);
+                } else {
+                    gr[k + 1] = rawImage[k];
+                    gr[k + width] = rawImage[k];
+                    gr[k + width + 1] = rawImage[k];
+                }
+                index++;
                 }
         }
 
-//        ImageStack stack = new ImageStack(width/2, height/2,3);
-//        ImageProcessor rip = new ShortProcessor(width/2, height/2);
-//        rip.setPixels(r);
-//        ImageProcessor gip = new ShortProcessor(width/2, height/2);
-//        gip.setPixels(gr);
-//        ImageProcessor bip = new ShortProcessor(width/2, height/2);
-//        bip.setPixels(b);
+        // work on r (top right pixel)
+//        int index = 0;
+        for (int j = 0; j < height - 2; j += 2) {
+            for (int i = 1; i < width - 1; i += 2) {
+                int k = j*width + i;
+
+                r[k] = rawImage[k];
+                r[k + width] = (short)((rawImage[k] + rawImage[k + 2*width])/2);
+                if (i > 1 || j > 1) {
+                    r[k - 1] = (short) ((rawImage[k] + rawImage[k - 2]) / 2);
+                    r[k + width -1] = (short)((rawImage[k] + rawImage[k - 2] +
+                                rawImage[k + 2*width - 2] + rawImage[k + 2*width])/4);
+                } else {
+                    r[k - 1] = rawImage[k];
+                    r[k + width - 1] = rawImage[k];
+                }
+            }
+        }
+
+        // work on b (bottom left pixel)
+//        int index = 0;
+        for (int j = 1; j < height - 2; j += 2) {
+            for (int i = 0; i < width - 2; i += 2) {
+                int k = j*width + i;
+
+                b[k] = rawImage[k];
+                if ((i > (width - 2)) || (j > 1)) {
+                    b[k - width] = (short)((rawImage[k] + rawImage[k - 2*width])/2);
+                    b[k + 1] = (short) ((rawImage[k] + rawImage[k + 2]) / 2);
+                    b[k - width + 1] = (short)((rawImage[k] + rawImage[k + 2] +
+                            rawImage[k + 2*width + 2] + rawImage[k + 2*width])/4);
+                } else {
+                    b[k + 1] = rawImage[k];
+                    b[k - width + 1] = rawImage[k];
+                    b[k - width] = rawImage[k];
+                }
+            }
+        }
+
+        // work on gb (top right pixel)
+//        int index = 0;
+        for (int j = 1; j < height - 2; j += 2) {
+            for (int i = 1; i < width - 2; i += 2) {
+                int k = j*width + i;
+
+                r[k] = rawImage[k];
+                if (i > 1 || j > 1) {
+                    gr[k + width] = (short)((rawImage[k] + rawImage[k + 2*width])/2);
+                    gr[k - 1] = (short) ((rawImage[k] + rawImage[k - 2]) / 2);
+                    gr[k + width -1] = (short)((rawImage[k] + rawImage[k - 2] +
+                            rawImage[k + 2*width - 2] + rawImage[k + 2*width])/4);
+                } else {
+                    gr[k - 1] = rawImage[k];
+                    gr[k + width - 1] = rawImage[k];
+                    gr[k + width] = rawImage[k];
+                }
+            }
+        }
+
+        short[] g = new short[gb.length];
+
+        for (int i = 0; i < g.length; i++) {
+            g[i] = (short)((gb[i] + gr[i])/2);
+        }
+
+        debayer[0] = r;
+        debayer[1] = g;
+        debayer[2] = b;
+
+        ImageStack stack = new ImageStack(width, height,3);
+        ImageProcessor rip = new ShortProcessor(width, height);
+        rip.setPixels(r);
+        ImageProcessor gip = new ShortProcessor(width, height);
+        gip.setPixels(g);
+
+        ImageProcessor bip = new ShortProcessor(width, height);
+        bip.setPixels(b);
 //
-//        stack.setProcessor(rip, 1);
-//        stack.setProcessor(gip, 2);
-//        stack.setProcessor(bip, 3);
+        stack.setProcessor(rip, 1);
+        stack.setProcessor(gip, 2);
+        stack.setProcessor(bip, 3);
 //
-//        ImagePlus imp = new ImagePlus();
-//        imp.setTitle("Working?");
-//        imp.setStack(stack);
-//        CompositeImage cimp = new CompositeImage(imp);
-//
-//        cimp.show();
+        bayerStack = stack;
+
     }
+
     public void get10(int pos) {
         for (int i = 0; i < 10; i++) {
 
@@ -282,7 +399,10 @@ public class LytroReader {
 //        r.getImage();
         r.getImage2();
         r.filterBayer();
-        r.sample(1,1);
+        r.rotate(0.115); //"rotation": -0.0020000615622848272,  radians
+        for (int i = 1; i < 12; i++) {
+            r.sample(0, i);
+        }
 
     }
 
