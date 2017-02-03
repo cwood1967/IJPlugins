@@ -34,11 +34,13 @@ public class LytroReader {
     int height = 5368;
     CompositeImage compImp;
     short[][] debayer;
+    short[] rotArray;
+
     ImageStack bayerStack;
     ImageStack sampleStack;
 
     ImagePlus sampleImp;
-
+    ImagePlus rawImp;
     public LytroReader(String pathname, int offset) {
 
         path = Paths.get(pathname);
@@ -79,11 +81,11 @@ public class LytroReader {
             index += 4;
         }
 
-//        ImageProcessor ip = new ShortProcessor(7728, 5368);
-//        ip.setPixels(image);
-//        ImagePlus imp = new ImagePlus("Nice");
-//        imp.setProcessor(ip);
-//        imp.show();
+        ImageProcessor ip = new ShortProcessor(7728, 5368);
+        ip.setPixels(image);
+        rawImp = new ImagePlus("Nice");
+        rawImp.setProcessor(ip);
+//        rawImp.show();
         rawImage = image;
         return null;
     }
@@ -94,10 +96,12 @@ public class LytroReader {
         bayerStack.getProcessor(2).rotate(angle);
         bayerStack.getProcessor(3).rotate(angle);
 
+//        rawImp.getProcessor().rotate(angle);
+//        rotArray = (short[])rawImp.getProcessor().getPixels();
         ImagePlus tempImp = new ImagePlus("Rotated");
         tempImp.setStack(bayerStack);
         compImp = new CompositeImage(tempImp, CompositeImage.COMPOSITE);
-
+//        rawImp.show();
         compImp.show();
 
     }
@@ -189,6 +193,8 @@ public class LytroReader {
                 index = j*wx + i;
                 if (index >= s.length) break;
                 s[index] = (short)((debayer[0][k]));
+//                s[index] = (short)((rotArray[k]));
+
 //                sa[index] = (short)((debayer[0][k - 4]));
 //                sb[index] = (short)((debayer[0][k + 4]));
 //                s[index] += (short)((debayer[0][k - 1]));
@@ -267,14 +273,14 @@ public class LytroReader {
                 gr[k] = rawImage[k];
 
                 if (i < (width -2) || j < (height - 2)) {
-                    gr[k + 1] = (short) ((rawImage[k] + rawImage[k + 2]) / 2);
-                    gr[k + width] = (short) ((rawImage[k] + rawImage[k + 2 * width]) / 2);
-                    gr[k + width + 1] = (short) ((rawImage[k] + rawImage[k + 2 * width] +
-                            rawImage[k + 2] + rawImage[k + 2 * width + 2]) / 4);
+                    gr[k + 1] = gr[k]; //(short) ((rawImage[k] + rawImage[k + 2]) / 2);
+                    gr[k + width] = gr[k]; //(short) ((rawImage[k] + rawImage[k + 2 * width]) / 2);
+                    gr[k + width + 1] = gr[k]; //(short) ((rawImage[k] + rawImage[k + 2 * width] +
+//                            rawImage[k + 2] + rawImage[k + 2 * width + 2]) / 4);
                 } else {
-                    gr[k + 1] = rawImage[k];
-                    gr[k + width] = rawImage[k];
-                    gr[k + width + 1] = rawImage[k];
+                    gr[k + 1] = gr[k]; //rawImage[k];
+                    gr[k + width] = gr[k]; //rawImage[k];
+                    gr[k + width + 1] = gr[k]; //rawImage[k];
                 }
                 index++;
                 }
@@ -282,19 +288,21 @@ public class LytroReader {
 
         // work on r (top right pixel)
 //        int index = 0;
+
         for (int j = 0; j < height - 2; j += 2) {
+
             for (int i = 1; i < width - 1; i += 2) {
                 int k = j*width + i;
 
                 r[k] = rawImage[k];
-                r[k + width] = (short)((rawImage[k] + rawImage[k + 2*width])/2);
+                r[k + width] = r[k]; //(short)((rawImage[k] + rawImage[k + 2*width])/2);
                 if (i > 1 || j > 1) {
-                    r[k - 1] = (short) ((rawImage[k] + rawImage[k - 2]) / 2);
-                    r[k + width -1] = (short)((rawImage[k] + rawImage[k - 2] +
-                                rawImage[k + 2*width - 2] + rawImage[k + 2*width])/4);
+                    r[k - 1] = r[k]; //(short) ((rawImage[k] + rawImage[k - 2]) / 2);
+                    r[k + width -1] = r[k]; //(short)((rawImage[k] + rawImage[k - 2] +
+//                                rawImage[k + 2*width - 2] + rawImage[k + 2*width])/4);
                 } else {
-                    r[k - 1] = rawImage[k];
-                    r[k + width - 1] = rawImage[k];
+                    r[k - 1] = r[k]; //rawImage[k];
+                    r[k + width - 1] = r[k]; //rawImage[k];
                 }
             }
         }
@@ -307,14 +315,14 @@ public class LytroReader {
 
                 b[k] = rawImage[k];
                 if ((i > (width - 2)) || (j > 1)) {
-                    b[k - width] = (short)((rawImage[k] + rawImage[k - 2*width])/2);
-                    b[k + 1] = (short) ((rawImage[k] + rawImage[k + 2]) / 2);
-                    b[k - width + 1] = (short)((rawImage[k] + rawImage[k + 2] +
-                            rawImage[k + 2*width + 2] + rawImage[k + 2*width])/4);
+                    b[k - width] = b[k]; //(short)((rawImage[k] + rawImage[k - 2*width])/2);
+                    b[k + 1] =  b[k]; //(short) ((rawImage[k] + rawImage[k + 2]) / 2);
+                    b[k - width + 1] =  b[k]; //(short)((rawImage[k] + rawImage[k + 2] +
+//                            rawImage[k + 2*width + 2] + rawImage[k + 2*width])/4);
                 } else {
-                    b[k + 1] = rawImage[k];
-                    b[k - width + 1] = rawImage[k];
-                    b[k - width] = rawImage[k];
+                    b[k + 1] =  b[k]; //rawImage[k];
+                    b[k - width + 1] =  b[k]; //rawImage[k];
+                    b[k - width] =  b[k]; //rawImage[k];
                 }
             }
         }
@@ -325,16 +333,16 @@ public class LytroReader {
             for (int i = 1; i < width - 2; i += 2) {
                 int k = j*width + i;
 
-                r[k] = rawImage[k];
+                gr[k] = rawImage[k];
                 if (i > 1 || j > 1) {
-                    gr[k + width] = (short)((rawImage[k] + rawImage[k + 2*width])/2);
-                    gr[k - 1] = (short) ((rawImage[k] + rawImage[k - 2]) / 2);
-                    gr[k + width -1] = (short)((rawImage[k] + rawImage[k - 2] +
-                            rawImage[k + 2*width - 2] + rawImage[k + 2*width])/4);
+                    gr[k + width] = gr[k]; //(short)((rawImage[k] + rawImage[k + 2*width])/2);
+                    gr[k - 1] = gr[k]; //(short) ((rawImage[k] + rawImage[k - 2]) / 2);
+                    gr[k + width -1] = gr[k]; //(short)((rawImage[k] + rawImage[k - 2] +
+//                            rawImage[k + 2*width - 2] + rawImage[k + 2*width])/4);
                 } else {
-                    gr[k - 1] = rawImage[k];
-                    gr[k + width - 1] = rawImage[k];
-                    gr[k + width] = rawImage[k];
+                    gr[k - 1] = gr[k]; //rawImage[k];
+                    gr[k + width - 1] = gr[k]; //rawImage[k];
+                    gr[k + width] = gr[k]; //rawImage[k];
                 }
             }
         }
@@ -398,10 +406,14 @@ public class LytroReader {
     public static void main(String[] args) {
 
         final ImageJ imagej = net.imagej.Main.launch(args);
-        String dirname = "/Volumes/projects/jjl/public/Microfab generic/lytro timelapse";
+
 //        String dirname = "/Volumes/projects/jjl/public/Chris Wood/color picture";
 //        String filename = "IMG_0488_9.json";
+        String dirname = "/Volumes/projects/jjl/public/Microfab generic/lytro timelapse";
         String filename = "IMG_0487_9.json";
+
+//        String dirname = "/Volumes/projects/cjw/LytroWhite";
+//        String filename = "IMG_3308_9.json";
 
         String pathname = dirname + "/" + filename;
         LytroReader r = new LytroReader(pathname, 000000);
@@ -410,9 +422,11 @@ public class LytroReader {
         r.getImage2();
         r.filterBayer();
         r.rotate(0.115); //"rotation": -0.0020000615622848272,  radians
-        for (float j = 14.283f/4; j < 14.283f ; j+= 1) {
-            for (float i = 14.283f/2.f + 2; i < 1.5f*14.283f; i+= 1){
-                r.sample(i, j);
+        for (float j = .49f*14.283f; j < .5f*14.283f ; j+= 2) {
+            for (float i = .9f*14.283f + 0; i < 1.1f*14.283f; i+= 2){
+                float ix = i - 1;
+                float iy = j + 1;
+                r.sample(ix, iy);
             }
         }
 
