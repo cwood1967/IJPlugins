@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import ij.CompositeImage;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.plugin.ImageCalculator;
 import ij.process.ColorProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ShortProcessor;
@@ -34,6 +35,9 @@ public class LytroReader {
     CompositeImage compImp;
     short[][] debayer;
     ImageStack bayerStack;
+    ImageStack sampleStack;
+
+    ImagePlus sampleImp;
 
     public LytroReader(String pathname, int offset) {
 
@@ -94,7 +98,7 @@ public class LytroReader {
         tempImp.setStack(bayerStack);
         compImp = new CompositeImage(tempImp, CompositeImage.COMPOSITE);
 
-//        compImp.show();
+        compImp.show();
 
     }
     public int[] getImage() {
@@ -141,7 +145,8 @@ public class LytroReader {
         return null;
     }
 
-    public void sample(int xoffset, int yoffset) {
+    public void sample(float xoffset, float yoffset) {
+
 
         double sx = 14.283;
         double sy = 12.369;
@@ -149,10 +154,13 @@ public class LytroReader {
 
         int wx = (int)(width/sx);
         int wy = (int)(height/sy);
+
+
+
         System.out.println(wx + " " + wy + " " + wx*wy);
         short[] s = new short[wx*wy];
-        short[] sa = new short[wx*wy];
-        short[] sb = new short[wx*wy];
+//        short[] sa = new short[wx*wy];
+//        short[] sb = new short[wx*wy];
         int index = 0;
         int rawIndex = 0;
 
@@ -181,8 +189,8 @@ public class LytroReader {
                 index = j*wx + i;
                 if (index >= s.length) break;
                 s[index] = (short)((debayer[0][k]));
-                sa[index] = (short)((debayer[0][k - 4]));
-                sb[index] = (short)((debayer[0][k + 4]));
+//                sa[index] = (short)((debayer[0][k - 4]));
+//                sb[index] = (short)((debayer[0][k + 4]));
 //                s[index] += (short)((debayer[0][k - 1]));
 //                s[index] += (short)((debayer[0][k + 1]));
 //                s[index] += (short)((debayer[0][k + width]));
@@ -192,10 +200,6 @@ public class LytroReader {
 //                s[index] += (short)((debayer[0][k - width + 1]));
 //                s[index] += (short)((debayer[0][k - width - 1]));
 
-                if (i < 2) {
-                    System.out.println(i + " " + j + " " + k + " " + index + " " + xchip + " " + ychip);
-                    System.out.println(k % width + " " + k / width);
-                }
 //                index++;
                 if ((i + xoff + offset) >= width) {
                     System.out.println(i + " " + j + " " + k + " " + index + " " + xchip + " " + ychip);
@@ -211,15 +215,21 @@ public class LytroReader {
         }
 
         ImageProcessor ip = new ShortProcessor((int)(width/sx), (int)(height/sy));
-        ImageProcessor aip = new ShortProcessor((int)(width/sx), (int)(height/sy));
-        ImageProcessor bip = new ShortProcessor((int)(width/sx), (int)(height/sy));
         ip.setPixels(s);
-        aip.setPixels(sa);
-        bip.setPixels(sb);
-        ImagePlus imp = new ImagePlus("Sample");
-        imp.setTitle("Sample" + Integer.toString(yoffset));
-        imp.setProcessor(ip);
-        imp.show();
+//        aip.setPixels(sa);
+//        bip.setPixels(sb);
+
+        if (sampleStack == null) {
+            sampleStack = new ImageStack(wx, wy);
+            sampleImp = new ImagePlus("Sample");
+        }
+        sampleStack.addSlice(ip);
+
+        sampleImp.setStack(sampleStack);
+        sampleImp.setTitle("Sample" + Float.toString(yoffset));
+        sampleImp.show();
+        sampleImp.setTitle("Sample" + Float.toString(yoffset));
+        sampleImp.updateAndRepaintWindow();
 
 //        ImagePlus aimp = new ImagePlus("Sample A" + xoffset);
 //        aimp.setTitle("Sample A");
@@ -400,8 +410,10 @@ public class LytroReader {
         r.getImage2();
         r.filterBayer();
         r.rotate(0.115); //"rotation": -0.0020000615622848272,  radians
-        for (int i = 1; i < 12; i++) {
-            r.sample(0, i);
+        for (float j = 14.283f/4; j < 14.283f ; j+= 1) {
+            for (float i = 14.283f/2.f + 2; i < 1.5f*14.283f; i+= 1){
+                r.sample(i, j);
+            }
         }
 
     }
