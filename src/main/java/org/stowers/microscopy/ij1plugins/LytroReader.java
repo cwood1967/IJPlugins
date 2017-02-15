@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import ij.CompositeImage;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.plugin.HyperStackConverter;
 import ij.plugin.ImageCalculator;
 import ij.process.ColorProcessor;
 import ij.process.FloatProcessor;
@@ -102,8 +103,12 @@ public class LytroReader {
         tempImp.setStack(bayerStack);
         compImp = new CompositeImage(tempImp, CompositeImage.COMPOSITE);
 //        rawImp.show();
-        compImp.show();
+        //compImp.show();
 
+    }
+
+    public void showComp() {
+        compImp.show();
     }
     public int[] getImage() {
 
@@ -149,6 +154,19 @@ public class LytroReader {
         return null;
     }
 
+    public void sampleToHyperStack() {
+
+        sampleImp = HyperStackConverter.toHyperStack(sampleImp, 3, sampleImp.getNSlices()/3, 1);
+
+        return;
+
+    }
+
+    public void showSample() {
+
+        sampleImp.show();
+    }
+
     public void sample(float xoffset, float yoffset) {
 
 
@@ -162,9 +180,9 @@ public class LytroReader {
 
 
         System.out.println(wx + " " + wy + " " + wx*wy);
-        short[] s = new short[wx*wy];
-//        short[] sa = new short[wx*wy];
-//        short[] sb = new short[wx*wy];
+        short[] sr = new short[wx*wy];
+        short[] sg = new short[wx*wy];
+        short[] sb = new short[wx*wy];
         int index = 0;
         int rawIndex = 0;
 
@@ -173,7 +191,6 @@ public class LytroReader {
         boolean nx = true;
 
         for(int j = 0; j < wy; j++) {
-//        for (double j = yoffset; j < (height - sy/2); j += sy) {
 
             if (nx) {
                 xoff = 0;
@@ -182,17 +199,17 @@ public class LytroReader {
                 xoff = sx/2.;
             }
             nx = !nx;
-
             double ychip = Math.round(yoffset + j*sy);
 
-//            for (double i = xoffset; i < (width - sx/2); i += sx) {
             for (int i = 0; i < wx; i++) {
 
                 double xchip = Math.round(xoff + xoffset + i*sx);
                 int k = (int)(ychip*width + xchip);
                 index = j*wx + i;
-                if (index >= s.length) break;
-                s[index] = (short)((debayer[0][k]));
+                if (index >= sr.length) break;
+                sr[index] = ((debayer[0][k]));
+                sg[index] = ((debayer[1][k]));
+                sb[index] = ((debayer[2][k]));
 //                s[index] = (short)((rotArray[k]));
 
 //                sa[index] = (short)((debayer[0][k - 4]));
@@ -213,39 +230,39 @@ public class LytroReader {
                     break;
                 }
 
-                if (index >= s.length) break;
+                if (index >= sr.length) break;
 
             }
-            if (index >= s.length) break;
+            if (index >= sr.length) break;
 //            if (j > 1) break;
         }
 
-        ImageProcessor ip = new ShortProcessor((int)(width/sx), (int)(height/sy));
-        ip.setPixels(s);
+        ImageProcessor ipr = new ShortProcessor((int)(width/sx), (int)(height/sy));
+        ipr.setPixels(sr);
+        ImageProcessor ipg = new ShortProcessor((int)(width/sx), (int)(height/sy));
+        ipg.setPixels(sg);
+        ImageProcessor ipb = new ShortProcessor((int)(width/sx), (int)(height/sy));
+        ipb.setPixels(sb);
 //        aip.setPixels(sa);
 //        bip.setPixels(sb);
 
         if (sampleStack == null) {
             sampleStack = new ImageStack(wx, wy);
             sampleImp = new ImagePlus("Sample");
-        }
-        sampleStack.addSlice(ip);
 
+        }
+        sampleStack.addSlice(ipr);
+        sampleStack.addSlice(ipg);
+        sampleStack.addSlice(ipb);
+
+        //if (sampleImp.getStack() == null) {
         sampleImp.setStack(sampleStack);
+        //}
         sampleImp.setTitle("Sample" + Float.toString(yoffset));
-        sampleImp.show();
+        //sampleImp.show();
         sampleImp.setTitle("Sample" + Float.toString(yoffset));
         sampleImp.updateAndRepaintWindow();
 
-//        ImagePlus aimp = new ImagePlus("Sample A" + xoffset);
-//        aimp.setTitle("Sample A");
-//        aimp.setProcessor(aip);
-//        aimp.show();
-//
-//        ImagePlus bimp = new ImagePlus("Sample B" + xoffset);
-//        bimp.setTitle("Sample B");
-//        bimp.setProcessor(bip);
-//        bimp.show();
 
     }
 
@@ -407,11 +424,11 @@ public class LytroReader {
 
         final ImageJ imagej = net.imagej.Main.launch(args);
 
-//        String dirname = "/Volumes/projects/jjl/public/Chris Wood/color picture";
-//        String filename = "IMG_0488_9.json";
-        String dirname = "/Volumes/projects/jjl/public/Microfab generic/lytro timelapse";
-        String filename = "IMG_0487_9.json";
-
+        String dirname = "/Volumes/projects/jjl/public/Chris Wood/color picture";
+        String filename = "IMG_0488_9.json";
+//        String dirname = "/Volumes/projects/jjl/public/Microfab generic/lytro timelapse";
+//        String filename = "IMG_0487_9.json";
+//
 //        String dirname = "/Volumes/projects/cjw/LytroWhite";
 //        String filename = "IMG_3308_9.json";
 
@@ -421,14 +438,19 @@ public class LytroReader {
 //        r.getImage();
         r.getImage2();
         r.filterBayer();
+
         r.rotate(0.115); //"rotation": -0.0020000615622848272,  radians
-        for (float j = .49f*14.283f; j < .5f*14.283f ; j+= 2) {
-            for (float i = .9f*14.283f + 0; i < 1.1f*14.283f; i+= 2){
+        r.showComp();
+        for (float j = .45f*14.283f; j < .46f*14.283f ; j+= .5) {     //.49, .5
+            for (float i = .7f*14.283f + 0; i < .8f*14.283f; i+= .5){
                 float ix = i - 1;
                 float iy = j + 1;
                 r.sample(ix, iy);
             }
         }
+
+        r.sampleToHyperStack();
+        r.showSample();
 
     }
 
