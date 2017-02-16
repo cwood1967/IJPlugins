@@ -435,7 +435,7 @@ public class LytroReader {
         zp.setMethod(zp.SUM_METHOD);
         zp.doHyperStackProjection(true);
         projectedImp = zp.getProjection();
-        projectedImp.show();
+//        projectedImp.show();
 
     }
 
@@ -471,12 +471,20 @@ public class LytroReader {
         sampleToHyperStack();
         sumProject();
         saveProjectedImage();
+        fileBytes = null;
+        rawImage2 = null;
+        debayer = null;
+        rawImage2 = null;
+        sampleImp = null;
+        rawImp = null;
+        compImp = null;
+        projectedImp = null;
 
     }
 
     public static void main(String[] args) {
 
-        final ImageJ imagej = net.imagej.Main.launch(args);
+//        final ImageJ imagej = net.imagej.Main.launch(args);
 
 //        String dirname = "/Volumes/projects/jjl/public/Chris Wood/color picture";
 //        String filename = "IMG_0488_9.json";

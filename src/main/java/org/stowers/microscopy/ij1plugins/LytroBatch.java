@@ -23,11 +23,11 @@ public class LytroBatch {
             String pathname = files[i].getAbsolutePath();
             LytroReader r = new LytroReader(pathname, 0);
             r.setOutPath(outPath);
-            readerList.add(r);
+            r.run();
         }
 
-        readerList.parallelStream()
-                .forEach(sp -> sp.run());
+//        readerList.parallelStream()
+//                .forEach(sp -> sp.run());
 
 
     }
