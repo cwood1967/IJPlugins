@@ -14,8 +14,11 @@ import java.util.ArrayList;
 import ij.CompositeImage;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.io.FileSaver;
+import ij.io.ImageWriter;
 import ij.plugin.HyperStackConverter;
 import ij.plugin.ImageCalculator;
+import ij.plugin.ZProjector;
 import ij.process.ColorProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ShortProcessor;
@@ -37,11 +40,15 @@ public class LytroReader {
     short[][] debayer;
     short[] rotArray;
 
+    String outPath;
+
     ImageStack bayerStack;
     ImageStack sampleStack;
 
     ImagePlus sampleImp;
     ImagePlus rawImp;
+    ImagePlus projectedImp;
+
     public LytroReader(String pathname, int offset) {
 
         path = Paths.get(pathname);
@@ -179,7 +186,7 @@ public class LytroReader {
 
 
 
-        System.out.println(wx + " " + wy + " " + wx*wy);
+//        System.out.println(wx + " " + wy + " " + wx*wy);
         short[] sr = new short[wx*wy];
         short[] sg = new short[wx*wy];
         short[] sb = new short[wx*wy];
@@ -420,18 +427,68 @@ public class LytroReader {
         }
     }
 
+    protected void sumProject() {
+
+        ZProjector zp = new ZProjector(sampleImp);
+        zp.setStartSlice(1);
+        zp.setStopSlice(sampleImp.getStack().getSize()/3);
+        zp.setMethod(zp.SUM_METHOD);
+        zp.doHyperStackProjection(true);
+        projectedImp = zp.getProjection();
+        projectedImp.show();
+
+    }
+
+    protected void saveProjectedImage() {
+
+        FileSaver saver = new FileSaver(projectedImp);
+        String fname = path.getFileName().toString();
+        fname = fname.substring(0,8);
+        System.out.println(fname);
+        System.out.println(outPath + "/" + fname);
+
+        saver.saveAsTiff(outPath + "/" + fname + ".tiff");
+    }
+
+    protected void setOutPath(String outpath) {
+        this.outPath = outpath;
+    }
+
+    protected void run() {
+        readFile();
+        getImage2();
+        filterBayer();
+        rotate(0.115);
+
+        for (float j = .4f*14.283f; j < .75f*14.283f ; j+= .4) {
+            for (float i = .6f*14.283f + 0; i < 1.3f*14.283f; i+= .4){
+                float ix = i - 0;
+                float iy = j + 0;
+                sample(ix, iy);
+            }
+        }
+
+        sampleToHyperStack();
+        sumProject();
+        saveProjectedImage();
+
+    }
+
     public static void main(String[] args) {
 
         final ImageJ imagej = net.imagej.Main.launch(args);
 
-        String dirname = "/Volumes/projects/jjl/public/Chris Wood/color picture";
-        String filename = "IMG_0488_9.json";
+//        String dirname = "/Volumes/projects/jjl/public/Chris Wood/color picture";
+//        String filename = "IMG_0488_9.json";
 //        String dirname = "/Volumes/projects/jjl/public/Microfab generic/lytro timelapse";
 //        String filename = "IMG_0487_9.json";
 //
 //        String dirname = "/Volumes/projects/cjw/LytroWhite";
 //        String filename = "IMG_3308_9.json";
 
+        String dirname = "/Users/cjw/Desktop";
+        String filename = "IMG_0540_9.json";
+        String outpath = "/Users/cjw/Desktop/";
         String pathname = dirname + "/" + filename;
         LytroReader r = new LytroReader(pathname, 000000);
         r.readFile();
@@ -440,18 +497,20 @@ public class LytroReader {
         r.filterBayer();
 
         r.rotate(0.115); //"rotation": -0.0020000615622848272,  radians
-        r.showComp();
-        for (float j = .45f*14.283f; j < .46f*14.283f ; j+= .5) {     //.49, .5
-            for (float i = .7f*14.283f + 0; i < .8f*14.283f; i+= .5){
-                float ix = i - 1;
-                float iy = j + 1;
+//        r.showComp();
+        for (float j = .4f*14.283f; j < .75f*14.283f ; j+= .5) {     //.49, .5
+            for (float i = .6f*14.283f + 0; i < 1.3f*14.283f; i+= .5){
+                float ix = i - 0;
+                float iy = j + 0;
                 r.sample(ix, iy);
             }
         }
 
         r.sampleToHyperStack();
-        r.showSample();
-
+//        r.showSample();
+        r.sumProject();
+        r.saveProjectedImage();
+        r.saveProjectedImage();
     }
 
 }
