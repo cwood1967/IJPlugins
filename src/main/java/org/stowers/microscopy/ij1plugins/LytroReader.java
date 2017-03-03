@@ -98,6 +98,10 @@ public class LytroReader {
         return null;
     }
 
+    public void showRawImp() {
+        rawImp.show();
+    }
+
     public void rotate(double angle) {
 
         bayerStack.getProcessor(1).rotate(angle);
@@ -439,6 +443,10 @@ public class LytroReader {
 
     }
 
+    protected void showProjected() {
+        projectedImp.show();
+    }
+
     protected void saveProjectedImage() {
 
         FileSaver saver = new FileSaver(projectedImp);
@@ -484,41 +492,45 @@ public class LytroReader {
 
     public static void main(String[] args) {
 
-//        final ImageJ imagej = net.imagej.Main.launch(args);
+        final ImageJ imagej = net.imagej.Main.launch(args);
 
 //        String dirname = "/Volumes/projects/jjl/public/Chris Wood/color picture";
 //        String filename = "IMG_0488_9.json";
 //        String dirname = "/Volumes/projects/jjl/public/Microfab generic/lytro timelapse";
 //        String filename = "IMG_0487_9.json";
 //
-//        String dirname = "/Volumes/projects/cjw/LytroWhite";
-//        String filename = "IMG_3308_9.json";
+        String dirname = "/Volumes/projects/cjw/LytroWhite";
+        String filename = "IMG_3308_9.json";
 
-        String dirname = "/Users/cjw/Desktop";
-        String filename = "IMG_0540_9.json";
+//        String dirname = "/Users/cjw/Desktop";
+//        String filename = "IMG_0540_9.json";
         String outpath = "/Users/cjw/Desktop/";
         String pathname = dirname + "/" + filename;
         LytroReader r = new LytroReader(pathname, 000000);
         r.readFile();
 //        r.getImage();
         r.getImage2();
+        r.showRawImp();
         r.filterBayer();
 
         r.rotate(0.115); //"rotation": -0.0020000615622848272,  radians
-//        r.showComp();
-        for (float j = .4f*14.283f; j < .75f*14.283f ; j+= .5) {     //.49, .5
-            for (float i = .6f*14.283f + 0; i < 1.3f*14.283f; i+= .5){
+        r.showComp();
+        for (float j = .2f*14.283f; j < .95f*14.283f ; j+= .05) {     //.49, .5
+            for (float i = .1f*14.283f + 0; i < .100050f*14.283f; i+= .02){
                 float ix = i - 0;
                 float iy = j + 0;
                 r.sample(ix, iy);
             }
         }
 
+
         r.sampleToHyperStack();
-//        r.showSample();
+        r.showSample();
         r.sumProject();
-        r.saveProjectedImage();
-        r.saveProjectedImage();
+        r.showProjected();
+
+//        r.saveProjectedImage();
+//        r.saveProjectedImage();
     }
 
 }
