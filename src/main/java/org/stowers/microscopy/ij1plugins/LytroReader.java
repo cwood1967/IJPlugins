@@ -496,11 +496,11 @@ public class LytroReader {
 
 //        String dirname = "/Volumes/projects/jjl/public/Chris Wood/color picture";
 //        String filename = "IMG_0488_9.json";
-//        String dirname = "/Volumes/projects/jjl/public/Microfab generic/lytro timelapse";
-//        String filename = "IMG_0487_9.json";
+        String dirname = "/Volumes/projects/jjl/public/Microfab generic/lytro timelapse";
+        String filename = "IMG_0487_9.json";
 //
-        String dirname = "/Volumes/projects/cjw/LytroWhite";
-        String filename = "IMG_3308_9.json";
+//        String dirname = "/Volumes/projects/cjw/LytroWhite";
+//        String filename = "IMG_3308_9.json";
 
 //        String dirname = "/Users/cjw/Desktop";
 //        String filename = "IMG_0540_9.json";
