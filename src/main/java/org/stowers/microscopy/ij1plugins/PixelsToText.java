@@ -34,7 +34,7 @@ public class PixelsToText implements Command, Previewable {
     @Parameter(label="Put in results table?", callback = "resultsChanged")
     boolean inResults;
 
-    @Parameter(required=false, label="Select Ouput Directory", style="directory")
+    @Parameter(required=false, label="Select Output Directory", style="directory")
     File outputDir;
 
     String strDir;
@@ -93,7 +93,7 @@ public class PixelsToText implements Command, Previewable {
     private void writeResults(float[] outPixels) {
 
         ResultsTable table = new ResultsTable();
-
+        
         for (int i = 0; i < outPixels.length; i++) {
             table.incrementCounter();
             float pix = outPixels[i];
