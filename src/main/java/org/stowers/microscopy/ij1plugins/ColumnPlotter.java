@@ -118,6 +118,8 @@ public class ColumnPlotter implements ActionListener {
         if (index >= nlabel) {
             makeHistogram(iheader);
         }
+
+
     }
 
 

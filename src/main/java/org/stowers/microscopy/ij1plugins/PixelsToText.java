@@ -3,6 +3,10 @@ package org.stowers.microscopy.ij1plugins;
 /**
  * Created by cjw on 3/13/17.
  */
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
+import java.util.ArrayList;
 import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,6 +16,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Vector;
+
+import javax.swing.*;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableModel;
 
 import ij.*;
 import ij.gui.MessageDialog;
@@ -20,75 +30,128 @@ import ij.io.FileInfo;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 import net.imagej.*;
+import org.jfree.ui.tabbedui.VerticalLayout;
 import org.scijava.command.Command;
 import org.scijava.command.Previewable;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 @Plugin(type = Command.class, name = "Click for Roi",  menuPath="Plugins>Stowers>Chris>Pixels To Text")
-public class PixelsToText implements Command, Previewable {
+public class PixelsToText implements Command, Previewable, ActionListener, TableModelListener {
 
     @Parameter
     ImagePlus imp;
 
-    @Parameter(label="Put in results table?", callback = "resultsChanged")
-    boolean inResults;
-
-    @Parameter(required=false, label="Select Output Directory", style="directory")
-    File outputDir;
+//    @Parameter(label="Put in results table?", callback = "resultsChanged")
+//    boolean inResults;
+//
+//    @Parameter(required=false, label="Select Output Directory", style="directory")
+//    File outputDir;
 
     String strDir;
 
+    Vector<Float> allPixels;
+    Vector<String>  colNames;
+    Vector<Vector<Float>> vectPix;
+    float[] pixels;
+    Path outputFile = null;
+
+    JTable jtable = null;
+    JFrame frame;
+    JPanel mainPane;
+    JButton runButton;
+    JScrollPane scrollPane;
+
+    DefaultTableModel tableModel;
     @Override
     public void run() {
 
-
+        allPixels = new Vector<Float>();
+        vectPix = new Vector();
+        vectPix.add(allPixels);
+        colNames = new Vector();
         String name = imp.getTitle();
-        Path outputFile = null;
-        if (!outputDir.exists() || outputDir == null) {
-            inResults = true;
-        } else {
 
-            outputFile = Paths.get(outputDir + "/" + name + ".txt");
-        }
+        pixels = (float[])(imp.getProcessor().convertToFloatProcessor().getPixels());
+        colNames.add("Value");
+//        allPixels.add(45.67f);
+        tableModel = new DefaultTableModel(vectPix, colNames);
+        createDialog();
+    }
 
-        float[] pixels = (float[])(imp.getProcessor().convertToFloatProcessor().getPixels());
-
+    private void addPixelsToTable() {
         float[] outPixels;
+
+        int n1 = tableModel.getRowCount();
+        if (n1 == 1) {
+            tableModel.removeRow(0);
+        }
         if (imp.getRoi() != null) {
             Point[] points = imp.getRoi().getContainedPoints();
             outPixels = new float[points.length];
             int i = 0;
             for (Point p : points) {
-                int x = (int)p.getX();
-                int y = (int)p.getY();
-                int index = imp.getWidth()*y + x;
+                int x = (int) p.getX();
+                int y = (int) p.getY();
+                int index = imp.getWidth() * y + x;
+//                allPixels.add(pixels[index]);
+                Vector<Float> f = new Vector<>();
+                f.add(pixels[index]);
+                tableModel.addRow(f);
+
                 outPixels[i] = pixels[index];
                 i++;
             }
-            System.out.println(points.length);
         } else {
             outPixels = pixels;
         }
+        int n3 = tableModel.getRowCount();
+        int n2 = allPixels.size();
+        System.out.println(n3 + " " + n2);
 
-        if (inResults) {
-            writeResults(outPixels);
-        } else {
-            writePixels(outputFile, outPixels);
-        }
+//        tableModel.fireTableRowsInserted(n1, n2-1);
 
     }
 
-    protected void resultsChanged() {
 
-        if (inResults == true) {
-            //strDir = outputDir.getAbsolutePath();
-            outputDir = null;
-        }
-        else {
-            outputDir = new File(strDir);
-        }
+    private void createDialog() {
+
+        tableModel.addTableModelListener(this);
+        frame = new JFrame("Pixels to Text");
+        mainPane = new JPanel(new VerticalLayout());
+        runButton = new JButton("Run");
+        runButton.addActionListener(this);
+        mainPane.add(runButton);
+        mainPane.setSize(100,1000);
+
+        jtable = new JTable();
+
+        jtable.setModel(tableModel);
+
+        jtable.setVisible(true);
+        jtable.setPreferredScrollableViewportSize(new Dimension(80,800));
+        jtable.setFillsViewportHeight(true);
+
+        scrollPane = new JScrollPane(jtable);
+        mainPane.add(scrollPane);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+//        frame.add(scrollPane);
+        frame.setContentPane(mainPane);
+        frame.setSize(120,1000);
+//        frame.pack();
+        frame.setVisible(true);
+
     }
+//    protected void resultsChanged() {
+//
+//        if (inResults == true) {
+//            //strDir = outputDir.getAbsolutePath();
+//            outputDir = null;
+//        }
+//        else {
+//            outputDir = new File(strDir);
+//        }
+//    }
 
     private void writeResults(float[] outPixels) {
 
@@ -130,6 +193,29 @@ public class PixelsToText implements Command, Previewable {
     @Override
     public void cancel() {
 
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        System.out.println("Adding");
+        addPixelsToTable();
+        jtable.repaint();
+
+    }
+
+    @Override
+    public void tableChanged(TableModelEvent e) {
+//        System.out.println("Table changed");
+//        System.out.println(allPixels.size());
+
+//        jtable.invalidate();
+        //allPixels.set(0, allPixels.get(allPixels.size() -1));
+
+//        jtable.validate();
+//        jtable.updateUI();
+//        jtable.repaint();
+//        System.out.println(jtable.getSize());
+//        runButton.setText(Float.toString(allPixels.get(allPixels.size() - 1)));
     }
 }
 
