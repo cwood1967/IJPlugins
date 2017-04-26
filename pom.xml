@@ -64,6 +64,16 @@
 
     <dependencies>
         <dependency>
+            <groupId>fr.inra.ijpb</groupId>
+            <artifactId>MorphoLibJ_</artifactId>
+            <version>LATEST</version>
+        </dependency>
+        <dependency>
+            <groupId>ome</groupId>
+            <artifactId>bioformats_package</artifactId>
+            <version>LATEST</version>
+        </dependency>
+        <dependency>
             <groupId>net.imglib2</groupId>
             <artifactId>imglib2</artifactId>
         </dependency>
@@ -91,11 +101,11 @@
             <groupId>net.imglib2</groupId>
             <artifactId>imglib2-ui</artifactId>
         </dependency>
-        <dependency>
-            <groupId>net.imglib2</groupId>
-            <artifactId>imglib2</artifactId>
-            <version>3.2.0</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>net.imglib2</groupId>-->
+            <!--<artifactId>imglib2</artifactId>-->
+            <!--&lt;!&ndash;<version>3.2.0</version>&ndash;&gt;-->
+        <!--</dependency>-->
         <dependency>
             <groupId>org.stowers.microscopy</groupId>
             <artifactId>cjwutils</artifactId>

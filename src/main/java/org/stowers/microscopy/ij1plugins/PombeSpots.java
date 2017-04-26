@@ -30,6 +30,7 @@ import ij.process.FloatProcessor;
 import org.stowers.microscopy.ij1plugins.tableutils.ResultsUtils;
 import org.stowers.microscopy.org.stowers.microscopy.utils.PombeSpot;
 
+import java.awt.*;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -249,7 +250,9 @@ public class PombeSpots implements  Previewable, Command  {
 
     }
 
-    protected ImageProcessor blur(double radius) {
+    protected ImageProcessor blur( double radius) {
+
+
         ImageProcessor resIp = maxImp.getProcessor().duplicate();
         GaussianBlur blur = new GaussianBlur();
         blur.blurGaussian(resIp, radius);
