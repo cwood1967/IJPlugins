@@ -16,8 +16,7 @@ import inra.ijpb.binary.BinaryImages;
 import org.stowers.microscopy.threshold.AutoThreshold;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by cjw on 4/25/17.
@@ -29,6 +28,7 @@ public class SpotInNucleus  implements Previewable, Command {
 //    @Parameter
     ImagePlus imp;
 
+    HashMap<Integer, List<Integer>> map = null;
     @Override
     public void run() {
 
@@ -62,11 +62,19 @@ public class SpotInNucleus  implements Previewable, Command {
         ImageProcessor rip = AutoThreshold.labelRegions(mip);
         ImagePlus rimp = new ImagePlus("Labeled Regions", rip);
         rimp.show();
-        HashMap<Integer, List<Integer>> map  = AutoThreshold.labelsToMap(rip);
+
+        // create a map to hold list of pixels for each segmented cell
+        // key is tje region number, value is the List of pixels
+        map = AutoThreshold.labelsToMap(rip);
 
         for (int i : map.keySet()) {
             System.out.println(map.get(i).size());
         }
+
+        maxImp.setC(3);
+        ImageProcessor gfpIp = maxImp.getProcessor().convertToFloatProcessor();
+        map2Image(gfpIp);
+
 
     }
 
@@ -101,6 +109,27 @@ public class SpotInNucleus  implements Previewable, Command {
         zproj.doHyperStackProjection(true);
         projected = zproj.getProjection();
         return projected;
+    }
+
+    /* use the instance variable map for the map */
+    protected void map2Image(ImageProcessor ip) {
+
+        float[] pixels = (float[])ip.getPixels();
+        List<Integer> x = map.get(2);
+        HashMap<Integer, Float> a = new HashMap();
+
+        for (Integer i : x) {
+            a.put(i, pixels[i]);
+        }
+
+        Comparator<Map.Entry<Integer, Float>> byValue = (entry1, entry2) -> entry1.getValue()
+                .compareTo(entry2.getValue());
+
+        a.entrySet().stream()
+                .sorted(byValue.reversed())
+                .limit(20)
+                .forEach(System.out::println);
+
     }
 
     @Override
