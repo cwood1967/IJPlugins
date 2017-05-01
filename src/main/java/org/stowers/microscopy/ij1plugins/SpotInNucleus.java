@@ -13,6 +13,7 @@ import loci.plugins.BF;
 import loci.plugins.in.ImporterOptions;
 
 import inra.ijpb.binary.BinaryImages;
+import org.stowers.microscopy.org.stowers.microscopy.utils.NucleusPixels;
 import org.stowers.microscopy.threshold.AutoThreshold;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ public class SpotInNucleus  implements Previewable, Command {
     @Override
     public void run() {
 
-        String filename = "/Users/cjw/DataTemp/Weems/20170421_153425_443/NDExp_Point0041_Seq0041.nd2";
+        String filename = "/Users/cjw/DataTemp/Weems/20170421_153425_443/MAX_NDExp_Point0004_Seq0004.nd2.tif";
 
         try {
             ImagePlus[] impArray = BF.openImagePlus(filename);
@@ -49,16 +50,26 @@ public class SpotInNucleus  implements Previewable, Command {
     }
 
     private void go() {
-        ImagePlus maxImp = zProject(imp, "MAX_METHOD");
+
+        int nc = imp.getNChannels();
+        int nt = imp.getNFrames();
+        int nz = imp.getStackSize()/nc/nt;
+
+        ImagePlus maxImp = null;
+        if (nz > 1) {
+            maxImp = zProject(imp, "MAX_METHOD");
+        } else {
+            maxImp = imp;
+        }
+
         maxImp.getStack().convertToFloat();
         maxImp.show();
         maxImp.setC(4);
         ImageProcessor bip = guassianBlur(maxImp.getProcessor(), 4.0);
-
         ImageProcessor mip = AutoThreshold.thresholdIp(bip, "Li");
         mip.setBackgroundValue(0.);
-        mip.erode();
-        mip.erode();
+//        mip.erode();
+//        mip.erode();
         ImageProcessor rip = AutoThreshold.labelRegions(mip);
         ImagePlus rimp = new ImagePlus("Labeled Regions", rip);
         rimp.show();
@@ -73,8 +84,14 @@ public class SpotInNucleus  implements Previewable, Command {
 
         maxImp.setC(3);
         ImageProcessor gfpIp = maxImp.getProcessor().convertToFloatProcessor();
-        map2Image(gfpIp);
+        gfpIp.filter(ImageProcessor.BLUR_MORE);
+        gfpIp.filter(ImageProcessor.BLUR_MORE);
+//        map2Image(gfpIp);
 
+        for (Map.Entry<Integer, List<Integer>> entry : map.entrySet()) {
+            System.out.println(entry.getKey());
+            NucleusPixels np = new NucleusPixels(gfpIp, entry.getValue());
+        }
 
     }
 
@@ -111,24 +128,33 @@ public class SpotInNucleus  implements Previewable, Command {
         return projected;
     }
 
-    /* use the instance variable map for the map */
+    /* use the instance variable map for the map
+    Sort the pixels values in each region of the green channel.
+    Smooth the image first (do that somewhere else) to get the intensity of the neighborhood)
+    */
     protected void map2Image(ImageProcessor ip) {
 
+        int w = ip.getWidth();
+        int h = ip.getHeight();
         float[] pixels = (float[])ip.getPixels();
-        List<Integer> x = map.get(2);
-        HashMap<Integer, Float> a = new HashMap();
+        for (Map.Entry<Integer, List<Integer>> s :map.entrySet()) {
+            List<Integer> x =s.getValue();
+            int inum = s.getKey();
+            System.out.println("########### " + inum + " ##############");
+            HashMap<Integer, Float> a = new HashMap();
 
-        for (Integer i : x) {
-            a.put(i, pixels[i]);
+            for (Integer i : x) {
+                a.put(i, pixels[i]);
+            }
+
+            Comparator<Map.Entry<Integer, Float>> byValue = (entry1, entry2) -> entry1.getValue()
+                    .compareTo(entry2.getValue());
+
+            a.entrySet().stream()
+                    .sorted(byValue.reversed())
+                    .limit(10)
+                    .forEach(System.out::println);
         }
-
-        Comparator<Map.Entry<Integer, Float>> byValue = (entry1, entry2) -> entry1.getValue()
-                .compareTo(entry2.getValue());
-
-        a.entrySet().stream()
-                .sorted(byValue.reversed())
-                .limit(20)
-                .forEach(System.out::println);
 
     }
 

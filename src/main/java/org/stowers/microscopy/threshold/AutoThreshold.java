@@ -4,6 +4,8 @@ package org.stowers.microscopy.threshold;
  * Created by cjw on 4/25/17.
  */
 
+import ij.plugin.filter.EDM;
+import ij.plugin.filter.MaximumFinder;
 import ij.process.*;
 import ij.ImagePlus;
 
@@ -50,6 +52,15 @@ public class AutoThreshold {
         ImageProcessor floatmask = new FloatProcessor(w, h, maskPixels);
         ImageProcessor mask = floatmask.convertToByte(false);
         mask.setBackgroundValue(0);
+        MaximumFinder maxFinder = new MaximumFinder();
+        EDM edm = new EDM();
+//        FloatProcessor floatEdm = edm.makeFloatEDM(mask, 0, false);
+//        ByteProcessor maxIp = maxFinder.findMaxima(floatEdm, 0.5,
+//                ImageProcessor.NO_THRESHOLD, MaximumFinder.SEGMENTED, false, true);
+//
+//        ImagePlus mm = new ImagePlus("wm", maxIp);
+//        mm.show();
+        edm.toWatershed(mask);
         return mask;
     }
 
