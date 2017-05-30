@@ -1,4 +1,4 @@
-package org.stowers.microscopy.org.stowers.microscopy.utils;
+package org.stowers.microscopy.ijplugins.utils;
 
 import ij.plugin.filter.MaximumFinder;
 import ij.process.ByteProcessor;

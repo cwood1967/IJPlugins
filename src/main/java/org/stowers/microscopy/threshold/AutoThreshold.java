@@ -4,6 +4,8 @@ package org.stowers.microscopy.threshold;
  * Created by cjw on 4/25/17.
  */
 
+import ij.IJ;
+import ij.plugin.filter.Binary;
 import ij.plugin.filter.EDM;
 import ij.plugin.filter.MaximumFinder;
 import ij.process.*;
@@ -43,7 +45,7 @@ public class AutoThreshold {
         return mask;
     }
 
-    public static ImageProcessor thresholdIp(ImageProcessor ip, String method) {
+    public static ImageProcessor thresholdIp(ImageProcessor ip, String method, boolean doWatershed) {
 
         int w = ip.getWidth();
         int h = ip.getHeight();
@@ -58,11 +60,18 @@ public class AutoThreshold {
 //        ByteProcessor maxIp = maxFinder.findMaxima(floatEdm, 0.5,
 //                ImageProcessor.NO_THRESHOLD, MaximumFinder.SEGMENTED, false, true);
 //
-//        ImagePlus mm = new ImagePlus("wm", maxIp);
+        ImagePlus mm = new ImagePlus("wm", mask);
 //        mm.show();
-        edm.toWatershed(mask);
+        IJ.run(mm, "Fill Holes", "");
+
+
+        if (doWatershed) {
+            edm.toWatershed(mask);
+        }
+
         return mask;
     }
+
 
     public static ImageProcessor labelRegions(ImageProcessor ip) {
 

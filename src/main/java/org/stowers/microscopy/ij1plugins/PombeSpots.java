@@ -4,20 +4,15 @@ package org.stowers.microscopy.ij1plugins;
  * Created by cjw on 12/12/16.
  */
 
-import ij.IJ;
 import ij.WindowManager;
 import ij.io.FileInfo;
 import ij.io.Opener;
-import ij.plugin.Thresholder;
 import ij.plugin.filter.MaximumFinder;
 import ij.process.AutoThresholder;
 import ij.process.ByteProcessor;
-import ij.text.TextPanel;
 import net.imagej.patcher.LegacyInjector;
 import net.imagej.ImageJ;
-import net.imagej.ops.Ops;
 import ij.measure.ResultsTable;
-import net.imglib2.ops.parse.token.Int;
 import org.scijava.command.Command;
 import org.scijava.command.Previewable;
 import org.scijava.plugin.Parameter;
@@ -26,18 +21,12 @@ import org.scijava.plugin.Plugin;
 import ij.ImagePlus;
 import ij.plugin.filter.GaussianBlur;
 import ij.process.ImageProcessor;
-import ij.process.FloatProcessor;
-import org.stowers.microscopy.ij1plugins.tableutils.ResultsUtils;
-import org.stowers.microscopy.org.stowers.microscopy.utils.PombeSpot;
+import org.stowers.microscopy.ijplugins.utils.PombeSpot;
 
-import java.awt.*;
-import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import static ij.WindowManager.getImageTitles;
 
 
 @Plugin(type = Command.class, name = "Click for Roi",  menuPath="Plugins>Chris>NotReady>PombeSpots")
