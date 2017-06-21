@@ -29,8 +29,10 @@ public class AutoThreshold {
         int thresh = auto.getThreshold(method, ip.getStatistics().histogram);
 
         int nh = ip.getStatistics().histogram.length;
-        double a1 = ip.getStatistics().histMin;
-        double a2 = ip.getStatistics().histMax;
+
+        ip.setHistogramRange(ip.getStatistics().min, ip.getStatistics().max);
+        double a1 = ip.getHistogramMin();
+        double a2 = ip.getHistogramMax();
         double d = (a2 - a1)/(1.*nh);
         double tval = a1 + d*(thresh + 1);
 
@@ -47,6 +49,12 @@ public class AutoThreshold {
 
     public static ImageProcessor thresholdIp(ImageProcessor ip, String method, boolean doWatershed) {
 
+        return thresholdIp(ip, method, true, doWatershed);
+    }
+
+    public static ImageProcessor thresholdIp(ImageProcessor ip, String method, boolean fill,
+                                             boolean doWatershed) {
+
         int w = ip.getWidth();
         int h = ip.getHeight();
 
@@ -62,9 +70,10 @@ public class AutoThreshold {
 //
         ImagePlus mm = new ImagePlus("wm", mask);
 //        mm.show();
-        IJ.run(mm, "Fill Holes", "");
 
-
+        if (fill) {
+            IJ.run(mm, "Fill Holes", "");
+        }
         if (doWatershed) {
             edm.toWatershed(mask);
         }
