@@ -147,7 +147,7 @@ public class PunctaPatch extends AbstractPatch {
             //id, sum, mean, xc, yc, size
             String line = String.format("%12d, %16.3f, %12.3f, %12.3f, %12.3f, %12.3f",
                     p.regionId, p.sum, p.mean, p.size, p.xc, p.yc);
-            System.out.println(line);
+//            System.out.println(line);
         }
 
         return res;
@@ -159,7 +159,7 @@ public class PunctaPatch extends AbstractPatch {
                 cellId, cellsum, cellsum/cellarea, cellarea,
                 allpunctasum, allpunctasum/allpunctasize, allpunctasize, map.size());
 
-        System.out.println(line);
+        //System.out.println(line);
         return line;
     }
 }

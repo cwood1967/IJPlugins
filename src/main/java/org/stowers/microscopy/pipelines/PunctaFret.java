@@ -43,6 +43,7 @@ public class PunctaFret {
 
     public void run() {
 
+        String imageName = imp.getTitle();
         List<Integer> channelList = new ArrayList<>();
         channelList.add(1);
         channelList.add(2);
@@ -102,14 +103,15 @@ public class PunctaFret {
                 PunctaPatch ppc = new PunctaPatch(i, gip, x0, y0, w0, h0);
                 //blur the patch to smooth for finding maxima
 
-                System.out.println("Channel " +  c);
                 ppc.measureFromLabeledRegions(punctaRegions);
                 ppc.measureFromCellMask(maskPatch.getPatch());
+                System.out.println("Region(Cell): " + i + " , Channel: " + c);
                 ArrayList<String> pOut = ppc.makePunctaOutput();
                 String cellOut = ppc.makeCellOutput();
             }
 
         }
+        System.out.println(imageName);
     }
 
     public void processBlue() {
