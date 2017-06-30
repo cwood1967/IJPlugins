@@ -22,6 +22,7 @@ import org.stowers.microscopy.threshold.AutoThreshold;
 
 import inra.ijpb.binary.BinaryImages;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +35,14 @@ public class PunctaFret {
     ImagePlus cellMask;
     ImagePlus labeledMask;
 
+    StringBuffer punctaBuffer;
+    StringBuffer cellBuffer;
+
+    String punctaHeader;
+    String cellHeader;
+
+    boolean show = false;
+    boolean good = true;
     public PunctaFret(ImagePlus imp) {
         this.imp = imp;
         int w = imp.getWidth();
@@ -41,7 +50,31 @@ public class PunctaFret {
 
     }
 
+    public boolean getGood() {
+        return good;
+    }
+    public void setShow(boolean show) {
+        this.show = show;
+    }
+    public String getPunctaOutput() {
+        return punctaBuffer.toString();
+    }
+
+    public String getCellOutput() {
+        return cellBuffer.toString();
+    }
+
     public void run() {
+
+        punctaBuffer = new StringBuffer();
+        cellBuffer = new StringBuffer();
+        //p.regionId, p.sum, p.mean, p.size, p.xc, p.yc);
+        punctaHeader = "ImageName, Cell, Channel, Background, " +
+                "PunctaId, SumIntensity, Area, XC, YX\n";
+
+        cellHeader = "ImageName, Cell, Channel, Background, SumIntensity, MeanIntensity, Area, PunctaSum, PunctaMean, "
+                + " PunctaArea, N-Puncta\n";
+
 
         String imageName = imp.getTitle();
         List<Integer> channelList = new ArrayList<>();
@@ -53,8 +86,17 @@ public class PunctaFret {
         //prcessCell will segment and label the cells in the desired channel
         // cellMask is just the binary mask, labeledMask labels each segmented region with an id
         processCell(3);
-        labeledMask.show();
+        if (show) {
+            labeledMask.show();
+        }
 
+        float bgRed = processBackGround(cellMask, 1);
+        float bgFret = processBackGround(cellMask, 2);
+        float bgGreen = processBackGround(cellMask, 3);
+        float[] backgrounds = new float[] { bgRed, bgFret, bgGreen};
+        System.out.println("Background " + bgRed);
+        System.out.println("Background " + bgFret);
+        System.out.println("Background " + bgGreen);
         int nregions = (int)labeledMask.getProcessor().getStatistics().max;
         int[][] regionbounds = findRegionBounds(labeledMask.getProcessor());
 
@@ -62,6 +104,10 @@ public class PunctaFret {
 
         // iterate over each region found above
         // the labeled mask labelMask contains the image processor to use
+        if (nregions > 20) {
+            good = false;
+            return;
+        }
         for (int i = 1; i <= nregions; i++) {
             //get a patch of the raw image
             int x0 = regionbounds[i][0];
@@ -71,6 +117,9 @@ public class PunctaFret {
 
             //just skip if it is too small
             if (w0*h0 < 300) {
+                continue;
+            }
+            if (w0*h0 > 5000) {
                 continue;
             }
 // Do the patch of the mask first, since it is the same for every channel
@@ -97,6 +146,10 @@ public class PunctaFret {
                 ri++;
             }
 
+            if (show) {
+                ImagePlus pImp = new ImagePlus("Labeled Puncta", punctaRegions);
+                pImp.show();
+            }
             for (int c : channelList) {
                 imp.setC(c);
                 gip = imp.getProcessor();
@@ -105,13 +158,52 @@ public class PunctaFret {
 
                 ppc.measureFromLabeledRegions(punctaRegions);
                 ppc.measureFromCellMask(maskPatch.getPatch());
-                System.out.println("Region(Cell): " + i + " , Channel: " + c);
-                ArrayList<String> pOut = ppc.makePunctaOutput();
-                String cellOut = ppc.makeCellOutput();
+//                System.out.println("Region(Cell): " + i + " , Channel: " + c);
+                //pOut is a list of strings with measurements for each puncta
+                //prefix contains image name, regionId (same as cellId),  channel
+                String bg = String.format("%10.2f", backgrounds[c - 1]);
+                String prefix = String.format("%s, %4d, %4d, %s", imageName, i, c, bg);
+                ArrayList<String> pOut = ppc.makePunctaOutput(prefix);
+                punctaToBuffer(pOut);
+                //cellOut is the string for the whole cell measurement
+
+                String cellPrefix = String.format("%s, %4d, %4d, %s", imageName, i, c, bg);
+                String cellOut = ppc.makeCellOutput(cellPrefix);
+                cellBuffer.append(cellOut);
             }
 
         }
-        System.out.println(imageName);
+
+    }
+
+    public String getPunctaHeader() {
+        return punctaHeader;
+    }
+
+    public String getCellHeader() {
+        return cellHeader;
+    }
+
+    public float processBackGround(ImagePlus mask, int channel) {
+
+        ImageProcessor mip = mask.getProcessor().duplicate();
+        mip.erode();
+        mip.erode();
+        mip.erode();
+        mip.erode();
+        byte[] bgpix = (byte[])mip.getPixels();
+        imp.setC(channel);
+        float[] fpix = (float[])(imp.getProcessor().convertToFloatProcessor().getPixels());
+
+        float sum = 0;
+        for (int i = 0; i < bgpix.length; i++) {
+            if (bgpix[i] == 0) {
+                sum += fpix[i];
+            }
+        }
+
+        float bgmean = sum/bgpix.length;
+        return bgmean;
     }
 
     public void processBlue() {
@@ -303,7 +395,14 @@ public class PunctaFret {
         return mask;
     }
 
-    public void outputToFile() {
+    public void punctaToBuffer(List<String> pOut) {
 
+        for (String p : pOut) {
+            punctaBuffer.append(p);
+        }
+    }
+
+    public String outputListToString() {
+        return "";
     }
 }

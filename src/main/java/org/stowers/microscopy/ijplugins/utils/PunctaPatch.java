@@ -22,13 +22,19 @@ public class PunctaPatch extends AbstractPatch {
     float allpunctasum;
     float allpunctasize;
 
+    boolean isMeasured = false;
+
     public PunctaPatch(int cellId, ImageProcessor oip, int x, int y, int width, int height) {
         super(oip, x, y, width, height);
         ip = makePatch();
         this.cellId = cellId;
-        System.out.println("---------");
+//        System.out.println("---------");
     }
 
+
+    /* this is an inner class to hold the measurements for each
+    puncta (region).
+     */
     public class PunctaMeasurement {
         int regionId;
 
@@ -52,22 +58,32 @@ public class PunctaPatch extends AbstractPatch {
         public void calcStats() {
 
             size  = ivMap.size();
-            sum = 0.f;
-            xc =0;
-            yc = 0;
-            for (Map.Entry<Integer, Float> kv : ivMap.entrySet()) {
-                sum += kv.getValue();
-                int kx = kv.getKey() % width;
-                int ky = kv.getKey() / width;
-                xc += kx;
-                yc += ky;
-            }
+            if (size > 0) {
+                sum = 0.f;
+                xc = 0;
+                yc = 0;
+                for (Map.Entry<Integer, Float> kv : ivMap.entrySet()) {
+                    sum += kv.getValue();
+                    int kx = kv.getKey() % width;
+                    int ky = kv.getKey() / width;
+                    xc += kx;
+                    yc += ky;
+                }
 
-            xc = (1.f*xc) /size;
-            yc = (1.f*yc) /size;
+                xc = (1.f * xc) / size;
+                yc = (1.f * yc) / size;
 
-            mean = sum/size;
+                mean = sum / size;
+                isMeasured = true;
 //            System.out.println(regionId + " "  +xc + " " + yc + " " + sum + " " + mean + " " + size);
+            }
+            else {
+                sum = 0.f;
+                xc = 0.f;
+                yc = 0.f;
+                mean = 0.f;
+                isMeasured = true;
+            }
         }
 
     }
@@ -90,10 +106,8 @@ public class PunctaPatch extends AbstractPatch {
 
         float[] ipPixels = (float[])ip.getPixels();
 
-
         map = new HashMap<>();
         for (int i = 1; i <= nregions; i++) {
-
             PunctaMeasurement pm = new PunctaMeasurement(i);
             map.put(i, pm);
         }
@@ -103,7 +117,6 @@ public class PunctaPatch extends AbstractPatch {
                 int m = pixels[i];
                 PunctaMeasurement pm = map.get(m);
                 pm.addToIVMap(i, ipPixels[i]);
-
             }
         }
 
@@ -115,9 +128,7 @@ public class PunctaPatch extends AbstractPatch {
             allpunctasum += pm.sum;
             allpunctasize += pm.size;
         }
-
 //        System.out.println(allpunctasum + " " + allpunctasize+ " " + allpunctasum/allpunctasize);
-
     }
 
     public void measureFromCellMask(ImageProcessor maskIp) {
@@ -137,7 +148,7 @@ public class PunctaPatch extends AbstractPatch {
 //        System.out.println(cellarea + " " + cellsum + " " + cellsum/cellarea);
     }
 
-    public ArrayList<String> makePunctaOutput() {
+    public ArrayList<String> makePunctaOutput(String prefix) {
 
         ArrayList<String> res = new ArrayList<>();
 
@@ -145,19 +156,26 @@ public class PunctaPatch extends AbstractPatch {
             int id = entry.getKey();
             PunctaMeasurement p = entry.getValue();
             //id, sum, mean, xc, yc, size
-            String line = String.format("%12d, %16.3f, %12.3f, %12.3f, %12.3f, %12.3f",
-                    p.regionId, p.sum, p.mean, p.size, p.xc, p.yc);
+            String line = String.format("%s, %12d, %16.3f, %12.3f, %12.3f, %12.3f, %12.3f%n",
+                    prefix, p.regionId, p.sum, p.mean, p.size, p.xc, p.yc);
+            res.add(line);
 //            System.out.println(line);
         }
 
         return res;
     }
 
-    public String makeCellOutput() {
+    public String makeCellOutput(String prefix) {
         //id, sum, mean, area, allpunctasum, allpuncatmean, allpunctasize
-        String line = String.format("%12d, %16.3f, %12.3f, %12.3f, %12.3f, %12.3f, %12.3f, %12d",
-                cellId, cellsum, cellsum/cellarea, cellarea,
-                allpunctasum, allpunctasum/allpunctasize, allpunctasize, map.size());
+        float meanpuncta;
+        if (allpunctasize < 0.00001) {
+            meanpuncta = 0.f;
+        } else {
+            meanpuncta = allpunctasum/allpunctasize;
+        }
+        String line = String.format("%s, %16.3f, %12.3f, %12.3f, %12.3f, %12.3f, %12.3f, %12d%n",
+                prefix, cellsum, cellsum/cellarea, cellarea,
+                allpunctasum, meanpuncta, allpunctasize, map.size());
 
         //System.out.println(line);
         return line;

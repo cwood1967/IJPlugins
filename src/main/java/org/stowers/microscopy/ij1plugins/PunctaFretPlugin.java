@@ -28,7 +28,10 @@ public class PunctaFretPlugin implements Command, Previewable {
     @Override
     public void run() {
         PunctaFret p = new PunctaFret(imp);
+        p.setShow(true);
         p.run();
+        System.out.print(p.getPunctaOutput());
+        System.out.print(p.getCellOutput());
     }
 
     @Override
