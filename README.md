@@ -18,4 +18,4 @@ for the plot.
 for a rectangular ROI at each point. The rois are also added to the ROI
 manager.
 * **Adaptive Threshold** Do an adaptive threshold of an image.
-working on LoG 3D
+* **Log 3D** working on LoG 3D
