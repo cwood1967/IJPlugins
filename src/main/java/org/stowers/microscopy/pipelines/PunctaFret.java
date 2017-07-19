@@ -21,6 +21,7 @@ import org.stowers.microscopy.ijplugins.utils.PunctaPatch;
 import org.stowers.microscopy.threshold.AutoThreshold;
 
 import inra.ijpb.binary.BinaryImages;
+import inra.ijpb.morphology.GeodesicReconstruction;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -66,6 +67,7 @@ public class PunctaFret {
 
     public void run() {
 
+        show = false;
         punctaBuffer = new StringBuffer();
         cellBuffer = new StringBuffer();
         //p.regionId, p.sum, p.mean, p.size, p.xc, p.yc);
@@ -82,6 +84,7 @@ public class PunctaFret {
         channelList.add(2);
         channelList.add(3);
         processBlue();
+//        blueMask.show();
 
         //prcessCell will segment and label the cells in the desired channel
         // cellMask is just the binary mask, labeledMask labels each segmented region with an id
@@ -90,6 +93,9 @@ public class PunctaFret {
             labeledMask.show();
         }
 
+        ImageProcessor totalmask = addMasks(blueMask.getProcessor(), cellMask.getProcessor());
+        cellMask.setProcessor(totalmask);
+//        cellMask.show();
         float bgRed = processBackGround(cellMask, 1);
         float bgFret = processBackGround(cellMask, 2);
         float bgGreen = processBackGround(cellMask, 3);
@@ -176,6 +182,34 @@ public class PunctaFret {
 
     }
 
+
+    public ImageProcessor addMasks(ImageProcessor mask1, ImageProcessor mask2) {
+
+        mask1.erode();
+        mask1.erode();
+        mask2.erode();
+        mask2.erode();
+
+        byte[] p1 = (byte[])mask1.getPixels();
+        byte[] p2 = (byte[])mask2.getPixels();
+        byte[] m = new byte[p1.length];
+
+        for(int i = 0; i < p1.length; i++) {
+            if (p1[i] + p2[i] != 0) {
+                m[i] = (byte)255;
+            }
+        }
+
+        ImageProcessor mip = new ByteProcessor(mask1.getWidth(), mask1.getHeight());
+        mip.setPixels(m);
+        mip.erode();
+        mip.dilate();
+        EDM edm = new EDM();
+        edm.toWatershed(mip);
+      ;
+        return mip;
+    }
+
     public String getPunctaHeader() {
         return punctaHeader;
     }
@@ -217,20 +251,26 @@ public class PunctaFret {
         blueIp.findEdges();
         blueIp.gamma(.5);
 
+
+
         ImageProcessor mask = AutoThreshold.thresholdIp(blueIp, "Otsu", false, false);
         mask = mask.convertToByteProcessor();
         mask.erode();
         mask.dilate();
 
-        ImageProcessor mask2 = mask.duplicate();
-        mask2.invert();
+        mask = GeodesicReconstruction.fillHoles(mask);
 
-        mask2 = BinaryImages.removeLargestRegion(mask2);
-        mask2.erode();
-        mask2.erode();
-        mask2.dilate();
+        EDM edm = new EDM();
+        edm.toWatershed(mask);
+//        ImageProcessor mask2 = mask.duplicate();
+//        mask2.invert();
+//
+//        mask2 = BinaryImages.removeLargestRegion(mask2);
+//        mask2.erode();
+//        mask2.erode();
+//        mask2.dilate();
 
-        blueMask = new ImagePlus("b -filled", mask2);
+        blueMask = new ImagePlus("b -filled", mask);
 
     }
 

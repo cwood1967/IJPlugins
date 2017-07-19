@@ -35,7 +35,7 @@ public class PunctaFretBatch implements Command, Previewable {
 
         DebugTools.setRootLevel("WARN");
         String[] files = inputDir.list();
-
+        
         String punctFilename = outputDir + "/" + "punctaData.csv";
         String cellFilename = outputDir + "/" + "cell Data.csv";
         Path punctaPath = Paths.get(punctFilename);
