@@ -89,11 +89,14 @@ public class PunctaFret {
         //prcessCell will segment and label the cells in the desired channel
         // cellMask is just the binary mask, labeledMask labels each segmented region with an id
         processCell(3);
+
+
+        ImageProcessor totalmask = addMasks(blueMask.getProcessor(), cellMask.getProcessor());
+        ImageProcessor regIp = BinaryImages.componentsLabeling(totalmask, 4, 16);
+        labeledMask = new ImagePlus("Labeled Mask", regIp);
         if (show) {
             labeledMask.show();
         }
-
-        ImageProcessor totalmask = addMasks(blueMask.getProcessor(), cellMask.getProcessor());
         cellMask.setProcessor(totalmask);
 //        cellMask.show();
         float bgRed = processBackGround(cellMask, 1);
@@ -107,11 +110,11 @@ public class PunctaFret {
         int[][] regionbounds = findRegionBounds(labeledMask.getProcessor());
 
 
-
         // iterate over each region found above
         // the labeled mask labelMask contains the image processor to use
-        if (nregions > 20) {
+        if (nregions > 50) {
             good = false;
+            System.out.println("To many regions " + imp.getTitle());
             return;
         }
         for (int i = 1; i <= nregions; i++) {
@@ -123,9 +126,11 @@ public class PunctaFret {
 
             //just skip if it is too small
             if (w0*h0 < 300) {
+                System.out.println("To small, region " + i + " " + imp.getTitle());
                 continue;
             }
             if (w0*h0 > 5000) {
+                System.out.println("To big, region " + i + " " + imp.getTitle());
                 continue;
             }
 // Do the patch of the mask first, since it is the same for every channel
@@ -206,7 +211,8 @@ public class PunctaFret {
         mip.dilate();
         EDM edm = new EDM();
         edm.toWatershed(mip);
-      ;
+
+
         return mip;
     }
 
@@ -247,30 +253,32 @@ public class PunctaFret {
         ImageProcessor blueIp = imp.getProcessor().duplicate().convertToFloatProcessor();
         BackgroundSubtracter bg = new BackgroundSubtracter();
         bg.subtractBackround(blueIp, 25);
-        blueIp.blurGaussian(3.0);
+        blueIp.blurGaussian(1.0);
         blueIp.findEdges();
         blueIp.gamma(.5);
 
 
-
         ImageProcessor mask = AutoThreshold.thresholdIp(blueIp, "Otsu", false, false);
         mask = mask.convertToByteProcessor();
-        mask.erode();
-        mask.dilate();
+        mask.erode();  //dilate
+//        mask.dilate();
 
-        mask = GeodesicReconstruction.fillHoles(mask);
+        ImageProcessor mask2 = mask.duplicate();
+        mask2.invert();
+        mask2 = BinaryImages.removeLargestRegion(mask2);
+        mask2 = GeodesicReconstruction.fillHoles(mask2);
 
-        EDM edm = new EDM();
-        edm.toWatershed(mask);
-//        ImageProcessor mask2 = mask.duplicate();
-//        mask2.invert();
-//
-//        mask2 = BinaryImages.removeLargestRegion(mask2);
-//        mask2.erode();
-//        mask2.erode();
+
+
+
+        mask2.erode(); //dilate
+        mask2.erode(); //dilate
 //        mask2.dilate();
 
-        blueMask = new ImagePlus("b -filled", mask);
+        EDM edm = new EDM();
+        edm.toWatershed(mask2);
+        blueMask = new ImagePlus("b -filled", mask2);
+
 
     }
 
@@ -290,8 +298,8 @@ public class PunctaFret {
         EDM edm = new EDM();
         edm.toWatershed(mask);
 
-        ImageProcessor regIp = BinaryImages.componentsLabeling(mask, 4, 16);
-        labeledMask = new ImagePlus("Labeled Mask", regIp);
+//        ImageProcessor regIp = BinaryImages.componentsLabeling(mask, 4, 16);
+//        labeledMask = new ImagePlus("Labeled Mask", regIp);
 
     }
 
