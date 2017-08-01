@@ -25,6 +25,7 @@ import inra.ijpb.morphology.GeodesicReconstruction;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class PunctaFret {
@@ -103,9 +104,9 @@ public class PunctaFret {
         float bgFret = processBackGround(cellMask, 2);
         float bgGreen = processBackGround(cellMask, 3);
         float[] backgrounds = new float[] { bgRed, bgFret, bgGreen};
-        System.out.println("Background " + bgRed);
-        System.out.println("Background " + bgFret);
-        System.out.println("Background " + bgGreen);
+//        System.out.println("Background " + bgRed);
+//        System.out.println("Background " + bgFret);
+//        System.out.println("Background " + bgGreen);
         int nregions = (int)labeledMask.getProcessor().getStatistics().max;
         int[][] regionbounds = findRegionBounds(labeledMask.getProcessor());
 
@@ -152,9 +153,15 @@ public class PunctaFret {
             //used this way to increment pixels for every level during growMaxRegion
             ImageProcessor punctaRegions = new ShortProcessor(pp.getWidth(), pp.getHeight());
             int ri = 1;
+            HashMap<Integer, List<Integer>> punctaMap = new HashMap<>();
             for (int p : points) {
-                growMaxRegion(dpatch, punctaRegions, p, .33, (byte) ri);
-                ri++;
+                ArrayList<Integer> dg = growMaxRegion(dpatch, punctaRegions, p, .5, (byte) ri);
+                if (dg.size() > 0) {
+                    punctaMap.put(ri, dg);
+                    ri++;
+                }
+//                System.out.println(i + "  " + ri + " " + dg.size() + " " +  punctaRegions.getStatistics().max);
+//                System.out.println(p % dpatch.getWidth() + " " + p / dpatch.getWidth());
             }
 
             if (show) {
@@ -167,7 +174,8 @@ public class PunctaFret {
                 PunctaPatch ppc = new PunctaPatch(i, gip, x0, y0, w0, h0);
                 //blur the patch to smooth for finding maxima
 
-                ppc.measureFromLabeledRegions(punctaRegions);
+                ppc.measureFromPunctaMap(punctaMap);
+                //ppc.measureFromLabeledRegions(punctaRegions);
                 ppc.measureFromCellMask(maskPatch.getPatch());
 //                System.out.println("Region(Cell): " + i + " , Channel: " + c);
                 //pOut is a list of strings with measurements for each puncta
@@ -357,7 +365,8 @@ public class PunctaFret {
         return pointList;
     }
 
-    public ImageProcessor growMaxRegion(ImageProcessor xip,  ImageProcessor mask, int pixelIndex, double level,
+
+    public  ArrayList<Integer> growMaxRegion(ImageProcessor xip,  ImageProcessor mask, int pixelIndex, double level,
                               byte regionValue) {
 
         final int w = xip.getWidth();
@@ -374,11 +383,15 @@ public class PunctaFret {
         int d = 1;
         int np = 3;
 
-        double mean = xip.getStatistics().mean;
-        double max = px[pixelIndex];
+        double mean = xip.getStatistics().mean;  //mean of the image processor
+        double max = px[pixelIndex];  //max of the region
         double std = xip.getStatistics().stdDev;
         double floor = mean + 1.0*std;
-        double thresh = floor + level*(max - floor);
+        double thresh = floor + level*(max - floor);   //the threshold for growing
+        /*
+        this can decide to not even count this peak if it is not high enough above
+        the mean. This is fine, but just make sure to account for it when reporting results.
+         */
         if (thresh < floor) {
             keepGoing = false;
         }
@@ -388,9 +401,11 @@ public class PunctaFret {
 //        System.out.println(thresh + " " + max);
         ArrayList<Integer> regionPix = new ArrayList<>();
 
+        int res = 0;
         if (keepGoing) {
             regionPix.add(pixelIndex);
-            maskPix[pixelIndex] = regionValue;
+//            maskPix[pixelIndex] = regionValue;
+            res++;
         }
 
         while (keepGoing) {
@@ -407,7 +422,8 @@ public class PunctaFret {
                         int index = yd*w + xd;
                         if (px[index] > thresh) {
                             regionPix.add(index);
-                            maskPix[index] = regionValue;
+//                            maskPix[index] = regionValue;
+                            res++;
                             keepGoing = true;
                         }
                     }
@@ -418,8 +434,9 @@ public class PunctaFret {
                     int index = yd*w + xd;
                     if (px[index] > thresh) {
                         regionPix.add(index);
-                        maskPix[index] = regionValue;
+//                        maskPix[index] = regionValue;
                         keepGoing = true;
+                        res++;
                     }
                     xd = x + d;
                     if (xd >= w) continue;
@@ -427,8 +444,9 @@ public class PunctaFret {
                     index = yd*w + xd;
                     if (px[index] > thresh) {
                         regionPix.add(index);
-                        maskPix[index] = regionValue;
+//                        maskPix[index] = regionValue;
                         keepGoing = true;
+                        res++;
                     }
 
                 }
@@ -436,11 +454,20 @@ public class PunctaFret {
             d++;
             np += 2;
         }
+
+        //System.out.println(res + " " + regionPix.size() +  " " + "dfdfdfdfdfdf");
+        if (regionPix.size() > 4) {
+            for (int index : regionPix) {
+                maskPix[index] = regionValue;
+            }
+        } else {
+            res = 0;
+        }
         xip.setPixels(px);
         mask.setPixels(maskPix);
 //        System.out.println("Num pix in region " + regionPix.size());
 
-        return mask;
+        return regionPix;
     }
 
     public void punctaToBuffer(List<String> pOut) {

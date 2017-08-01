@@ -10,7 +10,7 @@ import org.scijava.plugin.Plugin;
 /**
  * Created by cjw on 7/13/17.
  */
-@Plugin(type = Command.class, menuPath="Plugins>Chris>Log3D")
+@Plugin(type = Command.class, menuPath="Plugins>Stowers>Chris>Log3D")
 public class LoG3DPlugin implements Command, Previewable {
 
     @Parameter
@@ -36,9 +36,13 @@ public class LoG3DPlugin implements Command, Previewable {
 
         double time2 = System.currentTimeMillis();
         System.out.println(.001*(time2 -time1));
-        ImagePlus nImp = new ImagePlus("LoG 3D");
+//        ImagePlus nImp = new ImagePlus("LoG 3D");
+        String title = "Log3D " + imp.getTitle();
+        ImagePlus nImp = ij.IJ.createHyperStack(title, imp.getWidth(), imp.getHeight(),
+                1, imp.getNSlices(), 1, 32);
+//        nImp.setDimensions(1, logged.getSize(), 1);
         nImp.setStack(logged);
-
+        nImp.setTitle("Log3D " + imp.getTitle());
         nImp.show();
     }
 

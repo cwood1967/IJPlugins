@@ -174,6 +174,9 @@ public class LoG3DFilter {
         double t1 = System.currentTimeMillis();
         ImageStack res = addStacks(part1, part2);
         res = addStacks(res, part3);
+        part1 = null;
+        part2 = null;
+        part3 = null;
         System.out.println("Add time: " + (System.currentTimeMillis() - t1));
 
         int bb = 1;

@@ -99,6 +99,28 @@ public class PunctaPatch extends AbstractPatch {
         return zip;
     }
 
+    public void measureFromPunctaMap(HashMap<Integer, List<Integer>> punctaMap) {
+
+        allpunctasum = 0;
+        allpunctasize = 0;
+
+        map = new HashMap<>();
+        float[] ipPixels = (float[])ip.getPixels();
+        for (Map.Entry<Integer, List<Integer>> entry : punctaMap.entrySet()) {
+            PunctaMeasurement pm = new PunctaMeasurement(entry.getKey());
+            map.put(entry.getKey(), pm);
+
+            for (int i : entry.getValue()) {
+                pm.addToIVMap(i, ipPixels[i]);
+            }
+
+            pm.calcStats();
+            allpunctasum += pm.sum;
+            allpunctasize += pm.size;
+        }
+
+    }
+
     public void measureFromLabeledRegions(ImageProcessor regionsIp) {
 
         int nregions = (int)(regionsIp.getStatistics().max + 0.001);
