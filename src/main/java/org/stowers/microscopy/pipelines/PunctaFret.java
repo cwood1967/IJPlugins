@@ -12,9 +12,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import ij.plugin.ImageCalculator;
-import ij.plugin.filter.BackgroundSubtracter;
-import ij.plugin.filter.EDM;
-import ij.plugin.filter.MaximumFinder;
+import ij.plugin.filter.*;
 import ij.process.*;
 import org.stowers.microscopy.ijplugins.utils.BinaryPatch;
 import org.stowers.microscopy.ijplugins.utils.PunctaPatch;
@@ -68,7 +66,7 @@ public class PunctaFret {
 
     public void run() {
 
-        show = false;
+//        show = false;
         punctaBuffer = new StringBuffer();
         cellBuffer = new StringBuffer();
         //p.regionId, p.sum, p.mean, p.size, p.xc, p.yc);
@@ -85,18 +83,29 @@ public class PunctaFret {
         channelList.add(2);
         channelList.add(3);
         processBlue();
-//        blueMask.show();
 
+        if (show) {
+          blueMask.show();
+        }
+//        processBluePacked();
         //prcessCell will segment and label the cells in the desired channel
         // cellMask is just the binary mask, labeledMask labels each segmented region with an id
         processCell(3);
 
+        if (show) {
+            cellMask.show();
+        }
 
-        ImageProcessor totalmask = addMasks(blueMask.getProcessor(), cellMask.getProcessor());
+        //only use the blue mask as the total mask
+//        ImageProcessor totalmask = addMasks(blueMask.getProcessor(), cellMask.getProcessor());
+        ImageProcessor totalmask = blueMask.getProcessor();
         ImageProcessor regIp = BinaryImages.componentsLabeling(totalmask, 4, 16);
         labeledMask = new ImagePlus("Labeled Mask", regIp);
         if (show) {
             labeledMask.show();
+            ImagePlus totalImp = new ImagePlus("Total mask",  totalmask);
+            totalImp.setTitle("Total Mask");
+            totalImp.show();
         }
         cellMask.setProcessor(totalmask);
 //        cellMask.show();
@@ -104,9 +113,11 @@ public class PunctaFret {
         float bgFret = processBackGround(cellMask, 2);
         float bgGreen = processBackGround(cellMask, 3);
         float[] backgrounds = new float[] { bgRed, bgFret, bgGreen};
-//        System.out.println("Background " + bgRed);
-//        System.out.println("Background " + bgFret);
-//        System.out.println("Background " + bgGreen);
+        if (show) {
+            IJ.log("Background " + bgRed);
+            IJ.log("Background " + bgFret);
+            IJ.log("Background " + bgGreen);
+        }
         int nregions = (int)labeledMask.getProcessor().getStatistics().max;
         int[][] regionbounds = findRegionBounds(labeledMask.getProcessor());
 
@@ -181,7 +192,9 @@ public class PunctaFret {
                 //pOut is a list of strings with measurements for each puncta
                 //prefix contains image name, regionId (same as cellId),  channel
                 String bg = String.format("%10.2f", backgrounds[c - 1]);
+
                 String prefix = String.format("%s, %4d, %4d, %s", imageName, i, c, bg);
+
                 ArrayList<String> pOut = ppc.makePunctaOutput(prefix);
                 punctaToBuffer(pOut);
                 //cellOut is the string for the whole cell measurement
@@ -189,6 +202,9 @@ public class PunctaFret {
                 String cellPrefix = String.format("%s, %4d, %4d, %s", imageName, i, c, bg);
                 String cellOut = ppc.makeCellOutput(cellPrefix);
                 cellBuffer.append(cellOut);
+                if (show) {
+                    IJ.log(cellOut);
+                }
             }
 
         }
@@ -244,13 +260,15 @@ public class PunctaFret {
         float[] fpix = (float[])(imp.getProcessor().convertToFloatProcessor().getPixels());
 
         float sum = 0;
+        float nbg = 0;
         for (int i = 0; i < bgpix.length; i++) {
             if (bgpix[i] == 0) {
                 sum += fpix[i];
+                nbg++;
             }
         }
 
-        float bgmean = sum/bgpix.length;
+        float bgmean = sum/nbg;
         return bgmean;
     }
 
@@ -287,6 +305,44 @@ public class PunctaFret {
         edm.toWatershed(mask2);
         blueMask = new ImagePlus("b -filled", mask2);
 
+
+    }
+
+    public void processBluePacked() {
+
+        imp.setC(4);
+        ImageProcessor blueIp = imp.getProcessor().duplicate().convertToFloatProcessor();
+//        blueIp.medianFilter();
+        RankFilters rank = new RankFilters();
+        rank.rank(blueIp, 1., rank.MEDIAN, rank.BRIGHT_OUTLIERS, 50.f);
+        ImageProcessor mask = AutoThreshold.thresholdIp(blueIp, "Mean", false, false);
+        mask.erode();
+        EDM emd = new EDM();
+        ImageProcessor dmap = emd.makeFloatEDM(mask, 0, true);
+
+        float[] p = (float[])dmap.getPixels();
+        for (int i = 0; i < p.length; i++) {
+            if (p[i] > 1.0001) {
+                p[i] = 0;
+            } else {
+                p[i] = p[i]*255.f;
+            }
+        }
+
+        dmap.setPixels(p);
+        dmap = dmap.convertToByteProcessor();
+        ImagePlus dmapImp = new ImagePlus("dmap");
+        dmapImp.setProcessor(dmap);
+        IJ.run(dmapImp, "Fill Holes", null);
+        dmap.dilate();  //erode
+        dmap.erode();  //dilate
+        emd.toWatershed(dmap);
+
+        if (show) {
+            ImagePlus tmp = new ImagePlus("Blue 2");
+            tmp.setProcessor(dmap);
+            tmp.show();
+        }
 
     }
 
