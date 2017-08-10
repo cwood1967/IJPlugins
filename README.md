@@ -10,6 +10,8 @@ or greater is necessary.
  
 * **FastFileSaver** Saves images as tiffs much faster than the
 standard ImageJ SaveAs Tiff does.
+* **LoG 3D** 3D Laplacian of Gaussian that is multithreaded for faster
+performance. About 8 times faster than the single threaded plugin.
 * **ImageHistogram** Display a histogram of the image using JFreeChart
 for the plot.
 * **Column Plotter** Plot the histogram from a column in the Results
@@ -18,4 +20,4 @@ for the plot.
 for a rectangular ROI at each point. The rois are also added to the ROI
 manager.
 * **Adaptive Threshold** Do an adaptive threshold of an image.
-* **Log 3D** working on LoG 3D
+

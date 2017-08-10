@@ -1,7 +1,6 @@
-package org.stowers.microscopy.ij1plugins;
+package org.stowers.microscopy.ij1plugins.findpeaks;
 
 import ij.ImageStack;
-import net.imglib2.ops.parse.token.Int;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +19,8 @@ public class FindPeaks3DThread {
 
     float tol;
     float threshmin;
+    float minsep;
+    float zscale;
 
     ImageStack stack;
 
@@ -27,7 +28,7 @@ public class FindPeaks3DThread {
     List<FindPeaks3DLocalMax> peaks;
 
     public FindPeaks3DThread(ImageStack stack, int x, int y, int z, int w, int h, int d,
-                             float tol, float threshmin) {
+                             float tol, float threshmin, float minsep, float zscale) {
 
         this.stack = stack;
         this.x = x;
@@ -38,7 +39,8 @@ public class FindPeaks3DThread {
         this.d = d;
         this.tol = tol;
         this.threshmin = threshmin;
-
+        this.minsep = minsep;
+        this.zscale = zscale;
 
     }
 
@@ -65,7 +67,8 @@ public class FindPeaks3DThread {
 
             long index = z*w*h + y*w + x + i;  //p1 is a line of pixels in x, so i is the x coordinate
             maxima.add((Long)index);
-            FindPeaks3DLocalMax peak = new FindPeaks3DLocalMax(stack, x + i, y, z, p1[i]);
+            FindPeaks3DLocalMax peak = new FindPeaks3DLocalMax(stack, x + i, y, z, p1[i], tol,
+                    threshmin, minsep, zscale);
             peaks.add(peak);
         }
 
