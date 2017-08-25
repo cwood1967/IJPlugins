@@ -32,6 +32,13 @@ public class LoG3DFilter {
     double sy;
     double sz;
 
+    double[] hfx;
+    double[] hfy;
+    double[] hfz;
+    double[] hbx;
+    double[] hby;
+    double[] hbz;
+
     double cfactor;
     double PI = Math.PI;
     public LoG3DFilter(ImagePlus imp, double sx, double sy, double sz) {
@@ -72,22 +79,32 @@ public class LoG3DFilter {
 
         cfactor = 1./(Math.pow(2*PI, 1.5)*(sx*sy*sz));
         cfactor = 1;
-        double[] hfx =  makeKernelF(ksizeX, sx);
-        double[] hfy =  makeKernelF(ksizeY, sy);
-        double[] hfz =  makeKernelF(ksizeZ, sz);
-        double[] hbx =  makeKernelB(ksizeX, sx);
-        double[] hby =  makeKernelB(ksizeY, sy);
-        double[] hbz =  makeKernelB(ksizeZ, sz);
+        hfx =  makeKernelF(ksizeX, sx);
+        hfy =  makeKernelF(ksizeY, sy);
+        hfz =  makeKernelF(ksizeZ, sz);
+        hbx =  makeKernelB(ksizeX, sx);
+        hby =  makeKernelB(ksizeY, sy);
+        hbz =  makeKernelB(ksizeZ, sz);
 
         /* This is making three copies of the stack
 
          */
+
         ImageStack part1 = stack.duplicate();
+        processPart(part1, hbz, hby, hfx);
+
         ImageStack part2 = stack.duplicate();
+        processPart(part2, hbz, hfy, hbx);
+        part1 = addStacks(part1, part2);
+        part2 = null;
+
         ImageStack part3 = stack.duplicate();
-
+        processPart(part3, hfz, hby, hbx);
+        part1 = addStacks(part1, part3);
+        part3 = null;
+        return part1;
+        /***
         //filter for the z pixellines
-
         List<LoG3DThread> zList = new ArrayList<>();
         for (int i = 0; i < sizeX; i++) {
             for (int j = 0; j < sizeY; j++) {
@@ -184,6 +201,48 @@ public class LoG3DFilter {
 
         int bb = 1;
         return res;
+         **/
+    }
+
+    private void processPart(ImageStack part, double[] h1, double[] h2, double[] h3) {
+
+        //work on Z for this part
+
+        List<LoG3DThread> processList = new ArrayList<>();
+        for (int i = 0; i < sizeX; i++) {
+            for (int j = 0; j < sizeY; j++) {
+                LoG3DThread g = new LoG3DThread(part, h1, i, j, 0, 1, 1, sizeZ);
+                processList.add(g);
+            }
+        }
+
+        processList.parallelStream()
+                .forEach(s -> s.process());
+
+        processList.clear();
+        for (int i = 0; i < sizeX; i++) {
+            for (int k = 0; k < sizeZ; k++) {
+                LoG3DThread u = new LoG3DThread(part, h2, i, 0, k, 1, sizeY, 1);
+                processList.add(u);
+            }
+        }
+        processList.parallelStream()
+                .forEach(s -> s.process());
+        processList.clear();
+
+        for (int j = 0; j < sizeY; j++) {
+            for (int k = 0; k < sizeZ; k++) {
+                LoG3DThread v = new LoG3DThread(part, h3, 0, j, k, sizeX, 1, 1);
+                processList.add(v);
+
+            }
+        }
+        processList.parallelStream()
+                .forEach(s -> s.process());
+        processList.clear();
+
+
+
     }
 
     private double[] makeKernelF(int ksize, double s) {
