@@ -79,6 +79,9 @@ public class LoG3DFilter {
         double[] hby =  makeKernelB(ksizeY, sy);
         double[] hbz =  makeKernelB(ksizeZ, sz);
 
+        /* This is making three copies of the stack
+
+         */
         ImageStack part1 = stack.duplicate();
         ImageStack part2 = stack.duplicate();
         ImageStack part3 = stack.duplicate();

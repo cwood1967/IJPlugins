@@ -22,6 +22,8 @@ public class FindPeaks3DThread {
     float minsep;
     float zscale;
 
+    String name = "None";
+
     ImageStack stack;
 
     List<Long> maxima;
@@ -55,6 +57,11 @@ public class FindPeaks3DThread {
     public int getNumMaxima() {
         return maxima.size();
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public List<FindPeaks3DLocalMax> process() {
 
         float[] p1 = stack.getVoxels(x, y, z, w, h, d, null);
@@ -69,6 +76,7 @@ public class FindPeaks3DThread {
             maxima.add((Long)index);
             FindPeaks3DLocalMax peak = new FindPeaks3DLocalMax(stack, x + i, y, z, p1[i], tol,
                     threshmin, minsep, zscale);
+            peak.setName(name);
             peaks.add(peak);
         }
 

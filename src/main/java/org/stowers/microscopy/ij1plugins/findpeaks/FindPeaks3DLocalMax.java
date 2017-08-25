@@ -23,6 +23,23 @@ public class FindPeaks3DLocalMax {
     float minsep;
     float zscale = 1.f;
 
+    float intensity = 0;
+    float cx = 0;
+    float cy = 0;
+    float cz = 0;
+
+    float scx = 0 ;
+    float scy = 0 ;
+    float scz = 0 ;
+
+    int xmin;
+    int xmax;
+    int ymin;
+    int ymax;
+    int zmin;
+    int zmax;
+
+    String name = "None";
     ImageStack stack;
 
     List<Long> neighborsList;  //will include  the index of this peak
@@ -48,6 +65,18 @@ public class FindPeaks3DLocalMax {
 
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public float getSumIntensity() {
+        return intensity;
+    }
+
     public List<Long> getNeighborsList() {
         return neighborsList;
     }
@@ -70,6 +99,10 @@ public class FindPeaks3DLocalMax {
 
     public int getZ() {
         return z;
+    }
+
+    public float[] getCOM() {
+        return new float[] {cx, cy, cz};
     }
 
     public boolean checkY() {
@@ -103,16 +136,23 @@ public class FindPeaks3DLocalMax {
     }
 
     public List<Long> findRegion() {
-        System.out.print("working on: " + x + " " + y + " " + z + " : " + value + " -- ");
+//        System.out.print("working on: " + x + " " + y + " " + z + " : " + value + " -- ");
         neighborsList.add(voxelIndex);
 //        searchNeighborhoodx, y, z);
         searchForNeighbors();
-        System.out.println(neighborsList.size());
+//        System.out.println(neighborsList.size());
         return neighborsList;
     }
 
 
     private void searchForNeighbors() {
+
+        xmin = Integer.MAX_VALUE;
+        xmax= Integer.MIN_VALUE;
+        ymin = Integer.MAX_VALUE;
+        ymax= Integer.MIN_VALUE;
+        zmin = Integer.MAX_VALUE;
+        zmax= Integer.MIN_VALUE;
 
         List<Long> searchList = new ArrayList<>();
         Long index = (long)(z*w*h + y*w + x);
@@ -142,6 +182,7 @@ public class FindPeaks3DLocalMax {
 
         //System.out.println("working on: " + nx + " " + ny + " " + nz + " : " + pixels[13]);
 
+
         for (int i = 0; i < pixels.length; i++) {
             if (i == pixels.length/2) continue; //do check the center pixel
 
@@ -153,8 +194,9 @@ public class FindPeaks3DLocalMax {
             int sy = ny + ry;
             int sz = nz + rz;
 
-            if (((pixels[i] > .5*value) && pixels[i] > threshold) ||
-                    (pixels[i] > (value - tolerance)) && (pixels[i] > threshold)) {
+            if //(((pixels[i] > .25*value) && pixels[i] > threshold) ||
+                    ((pixels[i] > (value - tolerance)) && (pixels[i] > threshold)) {
+//                    (pixels[i] > threshold) {
 
                 Long index = (long)(sz*w*h + sy*w + sx);
                 if (!neighborsList.contains((Long)index)) {
@@ -162,9 +204,13 @@ public class FindPeaks3DLocalMax {
                     //System.out.println("Added: " + sx + " " + sy + " " + sz + " : " + pixels[i]);
                     float dd = (nx - sx)*(nx - sx) + (ny - sy)*(ny - sy) + (nz - sz)*(nz - sz);
                     //take care of this in searchForNeighbors()
-//                    if (dd < 5*5) {
-//                        resList.add(index);
-//                    }
+                    intensity +=  pixels[i];
+                    scx += pixels[i]*sx;
+                    scy += pixels[i]*sy;
+                    scz += pixels[i]*sz;
+
+                    checkextent(sx, sy, sz);
+                    resList.add(index);
                 }
             }
             else {
@@ -172,9 +218,32 @@ public class FindPeaks3DLocalMax {
             }
 
         }
+
+        cx = scx/intensity;
+        cy = scy/intensity;
+        cz = scz/intensity;
         return resList;
     }
 
+    private void checkextent(int sx, int sy, int sz) {
+
+        if (sx < xmin) {
+            xmin = sx;
+        } else if (sx > xmax) {
+            xmax = sx;
+        }
+        if (sy < ymin) {
+            ymin = sy;
+        } else if (sy > ymax) {
+            ymax = sy;
+        }
+        if (sz < zmin) {
+            zmin = sz;
+        } else if (sz > zmax) {
+            zmax = sz;
+        }
+
+    }
     /*
     This was causing stack overflow errors due to the recursion,
     so I switched to an iterative version. See searchNeighborhoodIterative
@@ -221,7 +290,15 @@ public class FindPeaks3DLocalMax {
 
     @Override
     public String toString() {
-        String res = voxelIndex + ", " + x + ", " + y + ", " + z + ", " + value;
+
+        String res = String.format("%10d, (%5d,%5d,%5d),"
+                + "%10.1f,%10.1f,%5d, "
+                + "%10.1f,%10.1f,%10.1f, "
+                + "[%5d,%5d], [%5d,%5d], [%5d,%5d]",
+                voxelIndex , x, y , z,
+                value, intensity, neighborsList.size(),
+                cx, cy, cz,
+                xmin, xmax, ymin, ymax, zmin, zmax);
         return res;
     }
 

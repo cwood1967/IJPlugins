@@ -28,6 +28,7 @@ public class FindPeaks3D {
     float minsep;
     int npeaks;
     float zscale;
+    String name = "None";
     List<FindPeaks3DLocalMax> peaksFoundList;
     List<FindPeaks3DLocalMax> peaksKeptList;
     List<Long> removeList;
@@ -49,6 +50,23 @@ public class FindPeaks3D {
     }
 
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public List<FindPeaks3DLocalMax> getPeaksKeptList() {
+        return peaksKeptList;
+    }
+
+    protected void findpeaksNoRes() {
+        findpeaks();
+    }
+
+
     protected List<FindPeaks3DLocalMax> findpeaks() {
 
         List<FindPeaks3DThread> threadList = Collections.synchronizedList(new ArrayList<>());
@@ -56,6 +74,7 @@ public class FindPeaks3D {
             for (int j = 1; j < h - 1; j++) {
                 FindPeaks3DThread thread = new FindPeaks3DThread(stack, 1, j, k, w - 1, 1, 1,
                         tolerance, threshold, minsep, zscale);
+                thread.setName(name);
                 threadList.add(thread);
             }
         }
@@ -96,8 +115,6 @@ public class FindPeaks3D {
             }
             List<Long> region = p.findRegion();
 
-//            System.out.println(p.toString());
-//            System.out.println(p.getNeighborsList().size());
             if (p.getNeighborsList().size() > 1) {
                 peaksKeptList.add(p);
                 removeClose(region);
@@ -105,18 +122,15 @@ public class FindPeaks3D {
                 removeList.add(p.getVoxelIndex());
             }
 
-
             if (peaksKeptList.size() >= npeaks) {
                 break;
             }
-            //if (j > 13) break;
-
         }
 
         peaksKeptList = peaksKeptList.stream()
                 .sorted(
-                        comparing(FindPeaks3DLocalMax::getZ)
-                )
+                        comparing(FindPeaks3DLocalMax::getSumIntensity).reversed())  //sort bright to dim
+//                        comparing(FindPeaks3DLocalMax::getZ)
                 .collect(Collectors.toList());
         return peaksKeptList;
 
