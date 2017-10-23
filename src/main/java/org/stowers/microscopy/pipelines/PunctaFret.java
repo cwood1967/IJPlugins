@@ -124,9 +124,9 @@ public class PunctaFret {
 
         // iterate over each region found above
         // the labeled mask labelMask contains the image processor to use
-        if (nregions > 50) {
+        if (nregions > 100) {
             good = false;
-            System.out.println("To many regions " + imp.getTitle());
+            System.out.println("Too many regions " + imp.getTitle());
             return;
         }
         for (int i = 1; i <= nregions; i++) {
@@ -292,9 +292,8 @@ public class PunctaFret {
         ImageProcessor mask2 = mask.duplicate();
         mask2.invert();
         mask2 = BinaryImages.removeLargestRegion(mask2);
-        mask2 = GeodesicReconstruction.fillHoles(mask2);
-
-
+        IJ.run(new ImagePlus("Fill", mask2), "Fill Holes", null);
+//        mask2 = GeodesicReconstruction.fillHoles(mask2);
 
 
         mask2.erode(); //dilate
