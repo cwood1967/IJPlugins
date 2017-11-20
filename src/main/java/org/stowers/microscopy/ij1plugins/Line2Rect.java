@@ -20,7 +20,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 
-@Plugin(type = Command.class, name = "Click for Roi",  menuPath="Plugins>Chris>Line To Rectangle")
+@Plugin(type = Command.class, name = "Click for Roi",  menuPath="Plugins>Stowers>Chris>Line To Rectangle")
 public class Line2Rect implements Previewable, Command {
 
     @Parameter

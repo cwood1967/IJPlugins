@@ -103,105 +103,7 @@ public class LoG3DFilter {
         part1 = addStacks(part1, part3);
         part3 = null;
         return part1;
-        /***
-        //filter for the z pixellines
-        List<LoG3DThread> zList = new ArrayList<>();
-        for (int i = 0; i < sizeX; i++) {
-            for (int j = 0; j < sizeY; j++) {
 
-                LoG3DThread g = new LoG3DThread(part1, hbz, i, j, 0, 1, 1, sizeZ);
-                zList.add(g);
-//                float[] pz1 = part1.getVoxels(i, j, 0, 1, 1, sizeZ, null);
-//                float[] f1 = convolve(pz1, hbz);
-//                part1.setVoxels(i, j, 0, 1, 1, sizeZ, f1);
-
-                LoG3DThread u = new LoG3DThread(part2, hbz, i, j, 0, 1, 1, sizeZ);
-                zList.add(u);
-//                float[] pz2 = part2.getVoxels(i, j, 0, 1, 1, sizeZ, null);
-//                float[] f2 = convolve(pz2, hbz);
-//                part2.setVoxels(i, j, 0, 1, 1, sizeZ, f2);
-
-                LoG3DThread v = new LoG3DThread(part3, hfz, i, j, 0, 1, 1, sizeZ);
-                zList.add(v);
-//                float[] pz3 = part3.getVoxels(i, j, 0, 1, 1, sizeZ, null);
-//                float[] f3 = convolve(pz3, hfz);
-//                part3.setVoxels(i, j, 0, 1, 1, sizeZ, f3);
-            }
-        }
-
-        zList.parallelStream()
-                .forEach(s->s.process());
-
-        List<LoG3DThread> yList = new ArrayList<>();
-        //filter for the y pixle lines
-        for (int i = 0; i < sizeX; i++) {
-            for (int k = 0; k < sizeZ; k++) {
-
-                LoG3DThread g = new LoG3DThread(part1, hby, i, 0, k, 1, sizeY, 1);
-                yList.add(g);
-//                float[] py1 = part1.getVoxels(i, 0, k, 1, sizeY, 1, null);
-//                float[] f1 = convolve(py1, hby);
-//                part1.setVoxels(i, 0, k, 1, sizeY, 1, f1);
-
-                LoG3DThread u = new LoG3DThread(part2, hfy, i, 0, k, 1, sizeY, 1);
-                yList.add(u);
-//                float[] py2 = part2.getVoxels(i, 0, k, 1, sizeY, 1, null);
-//                float[] f2 = convolve(py2, hfy);
-//                part2.setVoxels(i, 0, k, 1, sizeY, 1, f2);
-
-                LoG3DThread v = new LoG3DThread(part3, hby, i, 0, k, 1, sizeY, 1);
-                yList.add(v);
-//                float[] py3 = part3.getVoxels(i, 0, k, 1, sizeY, 1, null);
-//                float[] f3 = convolve(py3, hby);
-//                part3.setVoxels(i, 0, k, 1, sizeY, 1, f3);
-
-            }
-        }
-
-        yList.parallelStream()
-                .forEach(s->s.process());
-
-
-        List<LoG3DThread> xList = new ArrayList<>();
-        for (int j = 0; j < sizeY; j++) {
-            for (int k = 0; k < sizeZ; k++) {
-
-                LoG3DThread g = new LoG3DThread(part1, hfx, 0, j, k, sizeX, 1, 1);
-                xList.add(g);
-//                float[] px1 = part1.getVoxels(0, j, k, sizeX, 1, 1, null);
-//                float[] f1 = convolve(px1, hfx);
-//                part1.setVoxels(0, j, k, sizeX, 1, 1, f1);
-
-                LoG3DThread u = new LoG3DThread(part2, hbx, 0, j, k, sizeX, 1, 1);
-                xList.add(u);
-//                float[] px2 = part2.getVoxels(0, j, k, sizeX, 1, 1, null);
-//                float[] f2 = convolve(px2, hbx);
-//                part2.setVoxels(0, j, k, sizeX, 1, 1, f2);
-
-                LoG3DThread v = new LoG3DThread(part3, hbx, 0, j, k, sizeX, 1, 1);
-                xList.add(v);
-//                float[] px3 = part3.getVoxels(0, j, k, sizeX, 1, 1, null);
-//                float[] f3 = convolve(px3, hbx);
-//                part3.setVoxels(0, j, k, sizeX, 1, 1, f3);
-
-            }
-        }
-
-        xList.parallelStream()
-                .forEach(s->s.process());
-
-
-        double t1 = System.currentTimeMillis();
-        ImageStack res = addStacks(part1, part2);
-        res = addStacks(res, part3);
-        part1 = null;
-        part2 = null;
-        part3 = null;
-        System.out.println("Add time: " + (System.currentTimeMillis() - t1));
-
-        int bb = 1;
-        return res;
-         **/
     }
 
     private void processPart(ImageStack part, double[] h1, double[] h2, double[] h3) {
@@ -215,11 +117,11 @@ public class LoG3DFilter {
                 processList.add(g);
             }
         }
-
+        
         processList.parallelStream()
                 .forEach(s -> s.process());
-
         processList.clear();
+
         for (int i = 0; i < sizeX; i++) {
             for (int k = 0; k < sizeZ; k++) {
                 LoG3DThread u = new LoG3DThread(part, h2, i, 0, k, 1, sizeY, 1);

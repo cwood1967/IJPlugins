@@ -1,11 +1,11 @@
 package org.stowers.microscopy.ij1plugins.findpeaks;
 
-/**
- * Created by cjw on 8/1/17.
- */
 
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.process.ByteProcessor;
+import ij.process.ImageProcessor;
+import ij.process.StackStatistics;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -13,10 +13,20 @@ import java.util.stream.Collectors;
 import static java.util.Collections.reverseOrder;
 import static java.util.Comparator.comparing;
 
+/** Finds the peaks in a 3d image
+ * @author Chris Wood
+ * @version 0.01
+ *
+ * Stowers Institute for Medical Research
+ * Microscopy Center
+ *
+ * 2017
+ */
 public class FindPeaks3D {
 
     ImagePlus imp = null;
     ImageStack stack;
+    StackStatistics stats;
 
     float[] voxels;
     int w;
@@ -33,8 +43,18 @@ public class FindPeaks3D {
     List<FindPeaks3DLocalMax> peaksKeptList;
     List<Long> removeList;
 
+    List<Long> hotVoxels;
+    /**
+     * Created the FindPeaks object with the input parmeters
+     * @param imp The ImagePlus from ImageJ
+     * @param tolerance The noise tolerance (how high are peaks above baseline
+     * @param threshold Consider nothing lower than this value
+     * @param minsep Don't condsider spots closer than this
+     * @param npeaks Maximum number of peaks to find
+     * @param zscale How long is each z compared to x and y
+     */
     public FindPeaks3D(ImagePlus imp, float tolerance, float threshold,
-                       float minsep, int npeaks, float zscale) {
+                       float minsep, int npeaks, float zscale, double smoothRadius) {
 
         this.imp = imp;
         this.tolerance = tolerance;
@@ -45,10 +65,26 @@ public class FindPeaks3D {
         w = imp.getWidth();
         h = imp.getHeight();
         stack = imp.getStack().convertToFloat();
+        stats = new StackStatistics(imp);
         d = stack.getSize();
+        hotVoxels = new ArrayList<>();
         //findpeaks();
+
+        if (smoothRadius > 0.f) {
+            smoothStack(imp, smoothRadius);
+        }
     }
 
+    private void smoothStack(ImagePlus imp, double radius) {
+
+        int n = stack.getSize();
+
+        for (int i = 0; i < n; i++) {
+            ImageProcessor ip = stack.getProcessor(i + 1);
+            ip.blurGaussian(radius);
+        }
+
+    }
 
     public void setName(String name) {
         this.name = name;
@@ -62,17 +98,24 @@ public class FindPeaks3D {
         return peaksKeptList;
     }
 
+    public List<Long> getHotVoxelsList() {
+        return hotVoxels;
+    }
+
     protected void findpeaksNoRes() {
         findpeaks();
     }
 
-
+    /**
+     *
+     * @return List<FindPeaks3DLocalMax> Returns a List of FindPeaks3DLocalMax objects
+     */
     protected List<FindPeaks3DLocalMax> findpeaks() {
 
         List<FindPeaks3DThread> threadList = Collections.synchronizedList(new ArrayList<>());
         for (int k = 1; k < d -1; k++) {
             for (int j = 1; j < h - 1; j++) {
-                FindPeaks3DThread thread = new FindPeaks3DThread(stack, 1, j, k, w - 1, 1, 1,
+                FindPeaks3DThread thread = new FindPeaks3DThread(stack, stats, 1, j, k, w - 1, 1, 1,
                         tolerance, threshold, minsep, zscale);
                 thread.setName(name);
                 threadList.add(thread);
@@ -105,6 +148,9 @@ public class FindPeaks3D {
             if it is not close to a peek already on the keep list
             if its region is larger than 1 pixel
              */
+            if (p.getVoxelIndex() == 359989) {
+                int f = 5;
+            }
 
             if (removeList.contains(p.getVoxelIndex())) {
                 continue;
@@ -113,9 +159,10 @@ public class FindPeaks3D {
                 removeList.add(p.getVoxelIndex());
                 continue;
             }
+            // region is the same list as getNeighborsList
             List<Long> region = p.findRegion();
-
-            if (p.getNeighborsList().size() > 1) {
+            hotVoxels.addAll(region);
+            if (p.getNeighborsList().size() >= 1) {
                 peaksKeptList.add(p);
                 removeClose(region);
             } else {
@@ -134,6 +181,29 @@ public class FindPeaks3D {
                 .collect(Collectors.toList());
         return peaksKeptList;
 
+    }
+
+    public ImagePlus getRegionsStack() {
+
+
+        ImageStack rStack = new ImageStack(w, h, d);
+        for (int k = 0; k < d; k++) {
+            byte[] bp = new byte[w * h];
+            rStack.setProcessor(new ByteProcessor(w, h, bp), k + 1);
+        }
+
+        for (long v : hotVoxels) {
+
+            int vz = (int)v/(w*h);
+            int dex = (int)(v % (w*h));
+            int vx = ((int)v % (w*h)) % w;
+            int vy = ((int)v % (w*h)) / w;
+            //System.out.println(v + " " + vx + " " + vy + " " + vz);
+            ImageProcessor zp = rStack.getProcessor(vz + 1);
+            zp.set(dex, 255);
+        }
+        ImagePlus rImp = new ImagePlus("3D mask", rStack);
+        return rImp;
     }
 
     private boolean isClose(FindPeaks3DLocalMax peak) {

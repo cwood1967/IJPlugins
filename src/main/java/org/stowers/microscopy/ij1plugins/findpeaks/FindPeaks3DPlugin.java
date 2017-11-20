@@ -43,6 +43,9 @@ public class FindPeaks3DPlugin implements Command, Previewable {
     @Parameter(label="Max number of peaks")
     int npeaks;
 
+    @Parameter
+    double smoothRadius;
+
     RoiManager manager;
     Color[] colors;
     @Override
@@ -66,7 +69,7 @@ public class FindPeaks3DPlugin implements Command, Previewable {
             minsep = 8;
         }
 
-        FindPeaks3D peaks = new FindPeaks3D(imp, tolerance, threshold, minsep, npeaks, zscale);
+        FindPeaks3D peaks = new FindPeaks3D(imp, tolerance, threshold, minsep, npeaks, zscale, smoothRadius);
         List<FindPeaks3DLocalMax> peaksList = peaks.findpeaks();
 
         //put the peaks into rois
@@ -86,10 +89,13 @@ public class FindPeaks3DPlugin implements Command, Previewable {
         int roiIndex = 0;
         int workingZ = peaksList.get(0).getZ();
         for (FindPeaks3DLocalMax s : peaksList) {
-            float x = s.getX() + 0.5f;
-            float y = s.getY() + 0.5f;
+            float x = s.getX() + 0.0f;
+            float y = s.getY() + 0.0f;
+//            float x = s.getCOM()[0];
+//            float y = s.getCOM()[1];
             int z = s.getZ();
-           // System.out.println(roiIndex + " " + z + " " + workingZ);
+            System.out.println(roiIndex + " " + z + " " + workingZ);
+            System.out.println("N: "+ s.getNeighborsList().size());
 
             if (z != workingZ) {
                 drawRoi(xpoints, ypoints, workingZ, true);
@@ -107,6 +113,7 @@ public class FindPeaks3DPlugin implements Command, Previewable {
         drawRoi(xpoints, ypoints, workingZ, true);
         drawRoi(allxpoints, allypoints, 0, false);
 
+        peaks.getRegionsStack().show();
         System.out.println(peaksList.size());
         System.out.println("Done");
         return;

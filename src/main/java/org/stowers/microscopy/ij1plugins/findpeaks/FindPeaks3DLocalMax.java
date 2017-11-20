@@ -1,6 +1,8 @@
 package org.stowers.microscopy.ij1plugins.findpeaks;
 
+import ij.ImagePlus;
 import ij.ImageStack;
+import ij.process.StackStatistics;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,12 +41,16 @@ public class FindPeaks3DLocalMax {
     int zmin;
     int zmax;
 
+    float foundRadius;
+
+
     String name = "None";
     ImageStack stack;
+    StackStatistics stats;
 
     List<Long> neighborsList;  //will include  the index of this peak
 
-    public FindPeaks3DLocalMax(ImageStack stack, int x, int y, int z, float value,
+    public FindPeaks3DLocalMax(ImageStack stack, StackStatistics stats, int x, int y, int z, float value,
                                float tolerance, float threshold, float minsep, float zscale) {
         this.stack = stack;
         this.x = x;
@@ -55,7 +61,7 @@ public class FindPeaks3DLocalMax {
         this.threshold = threshold;
         this.minsep = minsep;
         this.zscale = zscale;
-
+        this.stats = stats;
         w = stack.getWidth();
         h = stack.getHeight();
         d = stack.getSize();
@@ -81,6 +87,10 @@ public class FindPeaks3DLocalMax {
         return neighborsList;
     }
 
+    public List<Long> getObjectVoxels() {
+        return neighborsList;
+    }
+
     public float getValue() {
         return value;
     }
@@ -101,11 +111,26 @@ public class FindPeaks3DLocalMax {
         return z;
     }
 
+    public int getDx() {
+        return xmax - xmin;
+    }
+    public int getDy() {
+        return ymax - ymin;
+    }
+    public int getDz() {
+        return zmax - zmin;
+    }
+
     public float[] getCOM() {
         return new float[] {cx, cy, cz};
     }
 
+    public float getFoundRadius() {
+        return foundRadius;
+    }
+
     public boolean checkY() {
+
 
         float[] pixels;
         try {
@@ -136,10 +161,21 @@ public class FindPeaks3DLocalMax {
     }
 
     public List<Long> findRegion() {
-//        System.out.print("working on: " + x + " " + y + " " + z + " : " + value + " -- ");
+
         neighborsList.add(voxelIndex);
+//        intensity = value;
 //        searchNeighborhoodx, y, z);
+        scx = value*x;
+        scy = value*y;
+        scz = value*z;
+        intensity = value;
+
+        cx = scx/intensity;
+        cy = scy/intensity;
+        cz = scz/intensity;
         searchForNeighbors();
+//        System.out.println("working on: " + name + " " + x + " " + y + " " + z + " : " +
+//                value + " -- " + neighborsList.size() + " " + voxelIndex);
 //        System.out.println(neighborsList.size());
         return neighborsList;
     }
@@ -164,12 +200,19 @@ public class FindPeaks3DLocalMax {
             int ny = (int)(i % (w*h))  / w;
             int nz = (int)(i / (w*h));
             float dd = (nx - x)*(nx - x) + (ny - y)*(ny - y) + 1.f*(nz - z)*(nz - z);
-            if (dd < minsep*minsep/2.0) {
+            if (dd > foundRadius*foundRadius) {
+                foundRadius = (float) Math.sqrt(dd);
+            }
+            if (dd < 100*minsep*minsep/2.0) {
                 List<Long> tmplist = searchNeighborhoodIterative(nx, ny, nz);
                 searchList.addAll(tmplist);
             }
             searchList.remove(0);
         }
+
+        cx = scx/intensity;
+        cy = scy/intensity;
+        cz = scz/intensity;
     }
 
     private List<Long> searchNeighborhoodIterative(int nx, int ny, int nz) {
@@ -184,7 +227,7 @@ public class FindPeaks3DLocalMax {
 
 
         for (int i = 0; i < pixels.length; i++) {
-            if (i == pixels.length/2) continue; //do check the center pixel
+            if (i == pixels.length/2) continue; //don't check the center pixel
 
             int rx = (i % 9) % 3 - 1;
             int ry = (i % 9) / 3 - 1;
@@ -194,9 +237,11 @@ public class FindPeaks3DLocalMax {
             int sy = ny + ry;
             int sz = nz + rz;
 
-            if //(((pixels[i] > .25*value) && pixels[i] > threshold) ||
-                    ((pixels[i] > (value - tolerance)) && (pixels[i] > threshold)) {
-//                    (pixels[i] > threshold) {
+            float cb = (float)(tolerance*(value - stats.mean));
+            float cp = (float)(pixels[i] - stats.mean);
+            if ((cp > cb) && (pixels[i] > threshold)) {
+//                    ((pixels[i] > (value - tolerance)) && (pixels[i] > threshold)) {
+//                    (pixels[i] >` threshold) {
 
                 Long index = (long)(sz*w*h + sy*w + sx);
                 if (!neighborsList.contains((Long)index)) {
@@ -219,9 +264,7 @@ public class FindPeaks3DLocalMax {
 
         }
 
-        cx = scx/intensity;
-        cy = scy/intensity;
-        cz = scz/intensity;
+
         return resList;
     }
 
