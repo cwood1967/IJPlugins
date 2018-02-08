@@ -20,8 +20,9 @@ import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.entity.ChartEntity;
 import org.jfree.data.general.DatasetChangeEvent;
 import org.jfree.data.general.DatasetChangeListener;
-import org.jfree.data.general.DatasetUtilities;
-import org.jfree.ui.RectangleEdge;
+import org.jfree.data.general.DatasetUtils;
+//import org.jfree.ui.RectangleEdge;
+import org.jfree.chart.ui.RectangleEdge;
 import org.scijava.command.Command;
 import org.scijava.command.Previewable;
 import org.scijava.plugin.Parameter;
@@ -404,7 +405,7 @@ public class TraceBlobPlugin implements Previewable, Command,
         double cy = 0;
         int mi = 0;
         for (int i = 0; i < ns; i++) {
-            double yy = DatasetUtilities.findYValue(dataset, i, x);
+            double yy = DatasetUtils.findYValue(dataset, i, x);
             System.out.println(i + " " + x + " " + yy);
             if (Math.abs(yy - y) < Math.abs(cy - y)) {
                 cy = yy;
