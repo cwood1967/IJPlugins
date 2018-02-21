@@ -4,6 +4,7 @@ import ij.ImagePlus;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.PointRoi;
+import ij.measure.ResultsTable;
 import ij.plugin.frame.RoiManager;
 import net.imglib2.histogram.Integer1dBinMapper;
 import net.imglib2.ops.parse.token.Int;
@@ -16,7 +17,10 @@ import org.stowers.microscopy.spotanalysis.Spot;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.Inflater;
+
+import static java.util.Comparator.comparing;
 
 /**
  * Created by cjw on 8/1/17.
@@ -45,6 +49,9 @@ public class FindPeaks3DPlugin implements Command, Previewable {
 
     @Parameter
     double smoothRadius;
+
+    @Parameter(label="Measure spot intensity?")
+    boolean doMeasure;
 
     RoiManager manager;
     Color[] colors;
@@ -88,14 +95,20 @@ public class FindPeaks3DPlugin implements Command, Previewable {
         ArrayList<PointRoi> rois = new ArrayList<>();
         int roiIndex = 0;
         int workingZ = peaksList.get(0).getZ();
+
+        peaksList = peaksList.stream()
+                .sorted(comparing(FindPeaks3DLocalMax::getMean3).reversed())
+                .collect(Collectors.toList());
+
         for (FindPeaks3DLocalMax s : peaksList) {
             float x = s.getX() + 0.0f;
             float y = s.getY() + 0.0f;
+
 //            float x = s.getCOM()[0];
 //            float y = s.getCOM()[1];
             int z = s.getZ();
-            System.out.println(roiIndex + " " + z + " " + workingZ);
-            System.out.println("N: "+ s.getNeighborsList().size());
+//            System.out.println(roiIndex + " " + z + " " + workingZ);
+//            System.out.println("N: "+ s.getNeighborsList().size());
 
             if (z != workingZ) {
                 drawRoi(xpoints, ypoints, workingZ, true);
@@ -110,6 +123,9 @@ public class FindPeaks3DPlugin implements Command, Previewable {
             allypoints.add(y);
             roiIndex++;
         }
+
+        writeTable(peaksList);
+
         drawRoi(xpoints, ypoints, workingZ, true);
         drawRoi(allxpoints, allypoints, 0, false);
 
@@ -117,6 +133,24 @@ public class FindPeaks3DPlugin implements Command, Previewable {
         System.out.println(peaksList.size());
         System.out.println("Done");
         return;
+    }
+
+    private void writeTable(List<FindPeaks3DLocalMax> peaksList) {
+        ResultsTable table = new ResultsTable();
+
+        for (FindPeaks3DLocalMax s : peaksList) {
+            table.incrementCounter();
+            table.addValue("Image", imp.getTitle());
+            table.addValue("X", s.getX());
+            table.addValue("Y", s.getY());
+            table.addValue("Z", s.getZ());
+            table.addValue("NVoxels", s.getNeighborsList().size());
+            table.addValue("Mean3", s.measureMean(3));
+            table.addValue("Mean5", s.measureMean(5));
+            table.addValue("VoxelValue", s.getValue());
+
+        }
+        table.show(imp.getTitle() + "_3D_Peaks");
     }
 
     private void drawRoi(List<Float> xpoints, List<Float> ypoints, int wz, boolean markZ) {

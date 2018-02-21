@@ -25,6 +25,8 @@ public class FindPeaks3DLocalMax {
     float minsep;
     float zscale = 1.f;
 
+    float mean3;
+
     float intensity = 0;
     float cx = 0;
     float cy = 0;
@@ -48,7 +50,8 @@ public class FindPeaks3DLocalMax {
     ImageStack stack;
     StackStatistics stats;
 
-    List<Long> neighborsList;  //will include  the index of this peak
+    List<Long> neighborsList;  //will include  the index of this peak'
+    List<Long> notAllowed;
 
     public FindPeaks3DLocalMax(ImageStack stack, StackStatistics stats, int x, int y, int z, float value,
                                float tolerance, float threshold, float minsep, float zscale) {
@@ -66,6 +69,7 @@ public class FindPeaks3DLocalMax {
         h = stack.getHeight();
         d = stack.getSize();
 
+        mean3 = measureMean(3);
         voxelIndex = z*w*h + w*y + x;
         neighborsList = new ArrayList<>();
 
@@ -89,6 +93,10 @@ public class FindPeaks3DLocalMax {
 
     public List<Long> getObjectVoxels() {
         return neighborsList;
+    }
+
+    public float getMeanIntensity() {
+        return intensity/neighborsList.size();
     }
 
     public float getValue() {
@@ -160,8 +168,13 @@ public class FindPeaks3DLocalMax {
         return res;
     }
 
-    public List<Long> findRegion() {
+    public List<Long> findRegion(List<Long> notAllowed) {
 
+        this.notAllowed = notAllowed;
+        // 1215, 929, 3
+        if ((x == 1215) & (y == 929)) {
+            int blah = 1;
+        }
         neighborsList.add(voxelIndex);
 //        intensity = value;
 //        searchNeighborhoodx, y, z);
@@ -236,14 +249,22 @@ public class FindPeaks3DLocalMax {
             int sx = nx + rx;
             int sy = ny + ry;
             int sz = nz + rz;
-
+            Long index = (long)(sz*w*h + sy*w + sx);
+            if (!okToUse(index)) {
+                continue;
+            }
             float cb = (float)(tolerance*(value - stats.mean));
+//            float cb = (float)(value - stats.mean) - tolerance;
             float cp = (float)(pixels[i] - stats.mean);
+
+            if (pixels[i] > value) {
+                continue;
+            }
+
             if ((cp > cb) && (pixels[i] > threshold)) {
 //                    ((pixels[i] > (value - tolerance)) && (pixels[i] > threshold)) {
 //                    (pixels[i] >` threshold) {
 
-                Long index = (long)(sz*w*h + sy*w + sx);
                 if (!neighborsList.contains((Long)index)) {
                     neighborsList.add(index);
                     //System.out.println("Added: " + sx + " " + sy + " " + sz + " : " + pixels[i]);
@@ -287,6 +308,15 @@ public class FindPeaks3DLocalMax {
         }
 
     }
+
+    private boolean okToUse(long index) {
+
+        if (notAllowed.contains(index)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
     /*
     This was causing stack overflow errors due to the recursion,
     so I switched to an iterative version. See searchNeighborhoodIterative
@@ -329,6 +359,34 @@ public class FindPeaks3DLocalMax {
             }
 
         }
+    }
+
+    public float getMean3() {
+        return mean3;
+    }
+
+    public float measureMean(int k) {
+
+        if (x <= k/2 || x >= (w - (k/2 + 1)) ||  y <= k/2 || y > (h - (k/2 + 1))
+                || z <= k/2 || z >= (d - (k/2 + 1))) {
+            k = 1;
+        }
+
+        float[] pixels= null;
+
+        try {
+            pixels = stack.getVoxels(x - k / 2, y - k / 2, z - k / 2, k, k, k, null);
+        }
+        catch (IndexOutOfBoundsException e) {
+            System.out.println(k + " " + toString());
+            return value;
+        }
+        float sum = 0.f;
+        for (int i = 0; i < pixels.length; i++) {
+            sum += pixels[i];
+        }
+        
+        return sum/pixels.length;
     }
 
     @Override

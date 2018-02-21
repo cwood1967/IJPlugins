@@ -160,7 +160,7 @@ public class FindPeaks3D {
                 continue;
             }
             // region is the same list as getNeighborsList
-            List<Long> region = p.findRegion();
+            List<Long> region = p.findRegion(hotVoxels);
             hotVoxels.addAll(region);
             if (p.getNeighborsList().size() >= 1) {
                 peaksKeptList.add(p);
@@ -243,6 +243,10 @@ public class FindPeaks3D {
                 removeList.add(index);
             }
         }
+    }
+
+    protected void measurePeaks() {
+
     }
 
     private void stackToArray() {
