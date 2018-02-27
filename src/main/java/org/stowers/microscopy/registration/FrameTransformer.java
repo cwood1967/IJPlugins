@@ -44,7 +44,6 @@ public class FrameTransformer {
 
     public boolean transformFrame() { //ImagePlus imp, int width, int height, int transformation, double[][] globalTransform, double[][] anchorPoints, int f){
         //this just uses the globalTransform to transform the indicated frame
-        System.out.println("Transforming " + f + slices + " " + frames);
         double[][] sourcePoints=null;
         TurboRegJ_ trj=null;
         switch (transformation) {

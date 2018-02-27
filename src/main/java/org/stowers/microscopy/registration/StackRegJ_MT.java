@@ -153,6 +153,8 @@ public class  StackRegJ_MT implements Command, Previewable {
 		threads.parallelStream()
                 .forEach(s -> s.calcLocalTransform(localtransforms));
 
+        System.out.println("The calculating time is " + (System.currentTimeMillis() - t1));
+
 		//and then accumulate the global transformations
 		for (int f = (targetFrame - 1); f>0; f--) {
 			double[][] rescued=clone_multidim_array(globalTransform);
@@ -210,18 +212,20 @@ public class  StackRegJ_MT implements Command, Previewable {
 		}
 		//now transform the image
 		//some multithreaded stuff needed here
+
+        t1 = System.currentTimeMillis();
+
 		List<FrameTransformer> transformers = new ArrayList<>();
 		for(int f=1;f<=frames;f++){
-			System.out.println("Adding " + f);
 			transformers.add(new FrameTransformer(imp, width, height,transformation,
 					transforms[f-1], anchorPoints, f));
 
 		}
 
 		transformers.parallelStream()
-				.forEach(s -> s.transformFrame());
+                .forEach(s -> s.transformFrame());
 
-		System.out.println("The time it " + (System.currentTimeMillis() - t1));
+		System.out.println("The transforming time is " + (System.currentTimeMillis() - t1));
 		imp.updateAndDraw();
 		System.out.println("Done");
 	}
