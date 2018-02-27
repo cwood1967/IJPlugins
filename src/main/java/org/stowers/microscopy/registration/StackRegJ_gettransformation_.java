@@ -174,6 +174,8 @@ public class StackRegJ_gettransformation_ implements Command, Previewable {
 			localtransforms[f-1]=getLocalTransform(imp,width,height,transformation,f,f-1);
 			IJ.showStatus("Frame "+f+" Registered");
 		}
+
+		System.out.println("The calculating time is " + (System.currentTimeMillis() - t1));
 		//and then accumulate the global transformations
 		for (int f = (targetFrame - 1); f>0; f--) {
 			double[][] rescued=clone_multidim_array(globalTransform);
@@ -216,8 +218,6 @@ public class StackRegJ_gettransformation_ implements Command, Previewable {
 			trans[0][f-1]=trans2[0]; trans[1][f-1]=trans2[1]; trans[2][f-1]=trans2[2];
 		}
 
-        System.out.println("The time it " + (System.currentTimeMillis() - t1));
-
 		if(outtrans){
 			new PlotWindow4("Translation Trajectory","x","y",trans[0],trans[1]).draw();
 			new PlotWindow4("Angle Trajectory","frame","angle (radians)",trans[2]).draw();
@@ -230,10 +230,13 @@ public class StackRegJ_gettransformation_ implements Command, Previewable {
 			tw.append(""+(i+1)+"\t"+linear);
 		}
 		//now transform the image
+        t1 = System.currentTimeMillis();
 		for(int f=1;f<=frames;f++){
 			if(!transformFrame(imp, width, height,transformation, transforms[f-1], anchorPoints, f)) return;
 			IJ.showStatus("Frame "+f+" Aligned");
 		}
+
+        System.out.println("The transforming time is " + (System.currentTimeMillis() - t1));
 		imp.updateAndDraw();
 	}
 
