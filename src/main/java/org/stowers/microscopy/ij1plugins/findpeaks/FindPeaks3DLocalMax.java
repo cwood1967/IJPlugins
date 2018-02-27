@@ -385,7 +385,7 @@ public class FindPeaks3DLocalMax {
         for (int i = 0; i < pixels.length; i++) {
             sum += pixels[i];
         }
-        
+
         return sum/pixels.length;
     }
 

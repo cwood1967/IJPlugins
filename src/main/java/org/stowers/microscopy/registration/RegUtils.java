@@ -265,4 +265,37 @@ public class RegUtils {
         } catch(Throwable e){IJ.log(e.toString());}
         return null;
     }
+
+    public static void setImpProcessor(final ImagePlus imp,ImagePlus source,int channel,int slice,int frame){
+        int channels = imp.getNChannels();
+        int frames = imp.getNFrames();
+        int slices = imp.getNSlices();
+        if(frames==1){
+            frames=slices;
+            slices=1;
+
+        }
+
+        source.getStack().deleteLastSlice();
+        int index=(channel-1)+(slice-1)*channels+(frame-1)*slices*channels+1;
+        switch(imp.getType()){
+            case ImagePlus.GRAY8: {
+                source.getProcessor().setMinAndMax(0.0,255.0);
+                imp.getStack().setPixels(source.getProcessor().convertToByte(false).getPixels(),index);
+                break;
+            }
+            case ImagePlus.GRAY16: {
+                source.getProcessor().setMinAndMax(0.0,65535.0);
+                imp.getStack().setPixels(source.getProcessor().convertToShort(false).getPixels(),index);
+                break;
+            }
+            case ImagePlus.GRAY32: {
+                imp.getStack().setPixels(source.getProcessor().getPixels(),index);
+                break;
+            }
+            default: {
+                IJ.error("Unexpected image type");
+            }
+        }
+    }
 }
