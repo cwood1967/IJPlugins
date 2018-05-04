@@ -13,6 +13,7 @@ import org.scijava.command.Previewable;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.stowers.microscopy.spotanalysis.Spot;
+import org.stowers.microscopy.ijplugins.utils.FitEllipsoid3D;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -40,6 +41,9 @@ public class FindPeaks3DPlugin implements Command, Previewable {
 
     @Parameter(label="Minimum separation")
     float minsep;
+
+    @Parameter(label="Largest Size (pixels)")
+    float maxSize;
 
     @Parameter(label="Z Sale")
     float zscale;
@@ -76,7 +80,7 @@ public class FindPeaks3DPlugin implements Command, Previewable {
             minsep = 8;
         }
 
-        FindPeaks3D peaks = new FindPeaks3D(imp, tolerance, threshold, minsep, npeaks, zscale, smoothRadius);
+        FindPeaks3D peaks = new FindPeaks3D(imp, tolerance, threshold, minsep, npeaks, zscale, smoothRadius, maxSize);
         List<FindPeaks3DLocalMax> peaksList = peaks.findpeaks();
 
         //put the peaks into rois
@@ -103,13 +107,11 @@ public class FindPeaks3DPlugin implements Command, Previewable {
         for (FindPeaks3DLocalMax s : peaksList) {
             float x = s.getX() + 0.0f;
             float y = s.getY() + 0.0f;
-
-//            float x = s.getCOM()[0];
-//            float y = s.getCOM()[1];
             int z = s.getZ();
-//            System.out.println(roiIndex + " " + z + " " + workingZ);
-//            System.out.println("N: "+ s.getNeighborsList().size());
 
+//            System.out.println("Surfce: " + s.getNRejected() + " V: " + s.neighborsList.size());
+//            System.out.println(s.getDx() + " " + s.getDy() + " " + s.getDz());
+                    //fitEllipsiod(s);
             if (z != workingZ) {
                 drawRoi(xpoints, ypoints, workingZ, true);
                 workingZ = z;
@@ -135,8 +137,16 @@ public class FindPeaks3DPlugin implements Command, Previewable {
         return;
     }
 
+    private void fitEllipsiod(FindPeaks3DLocalMax p) {
+
+        double[][] xyz = p.getXYZCoordinates();
+        FitEllipsoid3D e3d = new FitEllipsoid3D(xyz);
+        e3d.calcMoments();
+    }
+
     private void writeTable(List<FindPeaks3DLocalMax> peaksList) {
-        ResultsTable table = new ResultsTable();
+        ResultsTable table = ResultsTable.getResultsTable();
+        //table.reset();
 
         for (FindPeaks3DLocalMax s : peaksList) {
             table.incrementCounter();
@@ -145,12 +155,13 @@ public class FindPeaks3DPlugin implements Command, Previewable {
             table.addValue("Y", s.getY());
             table.addValue("Z", s.getZ());
             table.addValue("NVoxels", s.getNeighborsList().size());
+            table.addValue("SurfaceArea", s.getNRejected());
             table.addValue("Mean3", s.measureMean(3));
             table.addValue("Mean5", s.measureMean(5));
             table.addValue("VoxelValue", s.getValue());
 
         }
-        table.show(imp.getTitle() + "_3D_Peaks");
+        table.show("Results"); //imp.getTitle() + "_3D_Peaks");
     }
 
     private void drawRoi(List<Float> xpoints, List<Float> ypoints, int wz, boolean markZ) {

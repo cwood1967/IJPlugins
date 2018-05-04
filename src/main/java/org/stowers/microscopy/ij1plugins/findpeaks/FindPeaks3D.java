@@ -38,6 +38,8 @@ public class FindPeaks3D {
     float minsep;
     int npeaks;
     float zscale;
+    float maxSize;
+
     String name = "None";
     List<FindPeaks3DLocalMax> peaksFoundList;
     List<FindPeaks3DLocalMax> peaksKeptList;
@@ -54,7 +56,8 @@ public class FindPeaks3D {
      * @param zscale How long is each z compared to x and y
      */
     public FindPeaks3D(ImagePlus imp, float tolerance, float threshold,
-                       float minsep, int npeaks, float zscale, double smoothRadius) {
+                       float minsep, int npeaks, float zscale, double smoothRadius,
+                       float maxSize) {
 
         this.imp = imp;
         this.tolerance = tolerance;
@@ -62,6 +65,7 @@ public class FindPeaks3D {
         this.minsep = minsep;
         this.npeaks = npeaks;
         this.zscale = zscale;
+        this.maxSize = maxSize;
         w = imp.getWidth();
         h = imp.getHeight();
         stack = imp.getStack().convertToFloat();
@@ -116,7 +120,7 @@ public class FindPeaks3D {
         for (int k = 1; k < d -1; k++) {
             for (int j = 1; j < h - 1; j++) {
                 FindPeaks3DThread thread = new FindPeaks3DThread(stack, stats, 1, j, k, w - 1, 1, 1,
-                        tolerance, threshold, minsep, zscale);
+                        tolerance, threshold, minsep, zscale, maxSize);
                 thread.setName(name);
                 threadList.add(thread);
             }
@@ -129,6 +133,7 @@ public class FindPeaks3D {
                         e2.getVoxelIndex()))
                 .collect(Collectors.toList());
         System.out.println(peaksFoundList.size());
+
         peaksFoundList = peaksFoundList.stream()
                 .filter(e -> e.checkY())
                 .sorted(

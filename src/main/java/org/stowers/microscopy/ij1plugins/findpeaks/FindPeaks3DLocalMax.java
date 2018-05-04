@@ -43,8 +43,9 @@ public class FindPeaks3DLocalMax {
     int zmin;
     int zmax;
 
+    int nrejected;
     float foundRadius;
-
+    float maxSize;
 
     String name = "None";
     ImageStack stack;
@@ -54,7 +55,7 @@ public class FindPeaks3DLocalMax {
     List<Long> notAllowed;
 
     public FindPeaks3DLocalMax(ImageStack stack, StackStatistics stats, int x, int y, int z, float value,
-                               float tolerance, float threshold, float minsep, float zscale) {
+                               float tolerance, float threshold, float minsep, float zscale, float maxSize) {
         this.stack = stack;
         this.x = x;
         this.y = y;
@@ -65,6 +66,8 @@ public class FindPeaks3DLocalMax {
         this.minsep = minsep;
         this.zscale = zscale;
         this.stats = stats;
+        this.maxSize = maxSize;
+
         w = stack.getWidth();
         h = stack.getHeight();
         d = stack.getSize();
@@ -75,6 +78,40 @@ public class FindPeaks3DLocalMax {
 
     }
 
+    public double[][] getXYZCoordinates() {
+
+        double[][] res = new double[3][neighborsList.size()];
+        for (int i = 0;i < neighborsList.size(); i++) {
+            long index = neighborsList.get(i);
+            res[0][i] = xFromIndex(index);
+            res[1][i] = yFromIndex(index);
+            res[2][i] =  zFromIndex(index);
+        }
+        return res;
+    }
+
+    private int xFromIndex(long index) {
+
+        long az = index/(w*h);
+        long p = index  - az*w*h;
+        long ax = p % w;
+        return (int)ax;
+
+    }
+
+    private int yFromIndex(long index) {
+
+        long az = index/(w*h);
+        long p = index  - az*w*h;
+        long ay = p / w;
+        return (int)ay;
+
+    }
+
+    private int zFromIndex(long index) {
+        long az = index/(w*h);
+        return (int)az;
+    }
     public void setName(String name) {
         this.name = name;
     }
@@ -133,6 +170,10 @@ public class FindPeaks3DLocalMax {
         return new float[] {cx, cy, cz};
     }
 
+    public int getNRejected() {
+        return nrejected;
+    }
+
     public float getFoundRadius() {
         return foundRadius;
     }
@@ -189,7 +230,7 @@ public class FindPeaks3DLocalMax {
         searchForNeighbors();
 //        System.out.println("working on: " + name + " " + x + " " + y + " " + z + " : " +
 //                value + " -- " + neighborsList.size() + " " + voxelIndex);
-//        System.out.println(neighborsList.size());
+//           System.out.println(neighborsList.size());
         return neighborsList;
     }
 
@@ -207,19 +248,22 @@ public class FindPeaks3DLocalMax {
         Long index = (long)(z*w*h + y*w + x);
         searchList.add(index);
 
-        while (searchList.size() > 0) {
+        while (searchList.size() > 0 && neighborsList.size() < maxSize) {
             Long i = searchList.get(0);
             int nx = (int)(i % (w*h))  % w;
             int ny = (int)(i % (w*h))  / w;
             int nz = (int)(i / (w*h));
             float dd = (nx - x)*(nx - x) + (ny - y)*(ny - y) + 1.f*(nz - z)*(nz - z);
+            float d = (float)Math.sqrt(dd);
             if (dd > foundRadius*foundRadius) {
                 foundRadius = (float) Math.sqrt(dd);
             }
-            if (dd < 100*minsep*minsep/2.0) {
+            //System.out.println(dd + " " + Math.abs(nx -x) + " " + Math.abs(ny - y) + " " + Math.abs(nz - z));
+            //if (d < (.5*minsep)) { //100*minsep*minsep/2.0) {
                 List<Long> tmplist = searchNeighborhoodIterative(nx, ny, nz);
                 searchList.addAll(tmplist);
-            }
+            //.}
+
             searchList.remove(0);
         }
 
@@ -246,6 +290,10 @@ public class FindPeaks3DLocalMax {
             int ry = (i % 9) / 3 - 1;
             int rz = i / 9 - 1;
 
+            double dr2 = rx*rx + ry*ry+rz*rz;
+            if (dr2 > 1.1) {
+                continue;
+            }
             int sx = nx + rx;
             int sy = ny + ry;
             int sz = nz + rz;
@@ -253,22 +301,26 @@ public class FindPeaks3DLocalMax {
             if (!okToUse(index)) {
                 continue;
             }
-            float cb = (float)(tolerance*(value - stats.mean));
+            float cb = (float)(tolerance*(value)); // - stats.mean));
 //            float cb = (float)(value - stats.mean) - tolerance;
-            float cp = (float)(pixels[i] - stats.mean);
+            float cp = (float)(pixels[i]);// - stats.mean);
 
             if (pixels[i] > value) {
                 continue;
             }
 
-            if ((cp > cb) && (pixels[i] > threshold)) {
+            float dd = (sx - x)*(sx - x) + (sy - y)*(sy - y) + 1.f*(sz - z)*(sz - z);
+            float d = (float)Math.sqrt(dd);
+//            if (d < (.5*minsep))
+
+            if ((d < (.6*minsep)) && (cp > cb) && (pixels[i] > threshold)) {
 //                    ((pixels[i] > (value - tolerance)) && (pixels[i] > threshold)) {
 //                    (pixels[i] >` threshold) {
 
                 if (!neighborsList.contains((Long)index)) {
                     neighborsList.add(index);
                     //System.out.println("Added: " + sx + " " + sy + " " + sz + " : " + pixels[i]);
-                    float dd = (nx - sx)*(nx - sx) + (ny - sy)*(ny - sy) + (nz - sz)*(nz - sz);
+                    //float dd = (nx - sx)*(nx - sx) + (ny - sy)*(ny - sy) + (nz - sz)*(nz - sz);
                     //take care of this in searchForNeighbors()
                     intensity +=  pixels[i];
                     scx += pixels[i]*sx;
@@ -280,6 +332,7 @@ public class FindPeaks3DLocalMax {
                 }
             }
             else {
+                nrejected++;
                 //System.out.println("Rejected: " + sx + " " + sy + " " + sz + " : " + pixels[i]);
             }
 

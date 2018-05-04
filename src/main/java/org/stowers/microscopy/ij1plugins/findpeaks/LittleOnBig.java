@@ -38,7 +38,7 @@ public class LittleOnBig {
         w = imp.getWidth();
         h = imp.getHeight();
         d = imp.getImageStack().getSize();
-        bigPeaks = new FindPeaks3D(imp, tolerance, threshold, minsep, npeaks, zscale, smoothRadius);
+        bigPeaks = new FindPeaks3D(imp, tolerance, threshold, minsep, npeaks, zscale, smoothRadius, minsep);
         bigPeaks.setName("big");
         bigZScale = zscale;
 
@@ -50,7 +50,7 @@ public class LittleOnBig {
     public void setSmallPeaks(ImagePlus imp, float tolerance, float threshold,
                             float minsep, int npeaks, float zscale, double smoothRadius) {
 
-        smallPeaks = new FindPeaks3D(imp, tolerance, threshold, minsep, npeaks, zscale, smoothRadius);
+        smallPeaks = new FindPeaks3D(imp, tolerance, threshold, minsep, npeaks, zscale, smoothRadius, minsep);
         smallPeaks.setName("small");
         smallZScale = zscale;
     }
