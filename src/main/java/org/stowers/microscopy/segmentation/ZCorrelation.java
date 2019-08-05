@@ -11,7 +11,7 @@ import org.scijava.command.Previewable;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-@Plugin(type = Command.class, menuPath="Plugins>Chris>Z Correlation")
+@Plugin(type = Command.class, menuPath="Plugins>Stowers>Chris>Z Correlation")
 public class ZCorrelation implements Command, Previewable {
 
     @Parameter
