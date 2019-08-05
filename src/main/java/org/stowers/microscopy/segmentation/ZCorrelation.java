@@ -1,7 +1,9 @@
 package org.stowers.microscopy.segmentation;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.gui.ImageWindow;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import org.scijava.command.Command;
@@ -15,6 +17,8 @@ public class ZCorrelation implements Command, Previewable {
     @Parameter
     ImagePlus imp;
 
+    ImagePlus cimp = null;
+
     int sizeT;
     int sizeZ;
 
@@ -25,7 +29,9 @@ public class ZCorrelation implements Command, Previewable {
         sizeZ = imp.getNSlices();
         KernelTanh kern = new KernelTanh(2., .9, .85, sizeZ);
         kernel = kern.calcTanh();
-        zcorrelate();
+        cimp = zcorrelate();
+        cimp.show();
+
     }
 
     @Override
@@ -40,13 +46,15 @@ public class ZCorrelation implements Command, Previewable {
 
     public ImagePlus zcorrelate() {
 
-
         ImageStack stack = imp.getStack();
         ImageStack corr_stack = new ImageStack(imp.getWidth(), imp.getHeight(), sizeT);
+        IJ.showStatus("Calculating best Z");
         double[] zs = SegUtils.stackEdgeZScore(stack);
 
+        IJ.showStatus("Correlating Z");
         for (int k = 0; k < sizeT; k++) {
             //imp.setT(k + 1);
+            IJ.showProgress(k, sizeT);
             int nx = stack.getWidth();
             int ny = stack.getHeight();
 
@@ -54,30 +62,40 @@ public class ZCorrelation implements Command, Previewable {
             int bestZ = calcBestZ(zs, slice, sizeZ);
 
             int kstart = bestZ - kernel.length/2;
+            if (kstart < 0) {
+                kstart = 0;
+            }
             int kstop = kstart + kernel.length;
-
+            if (kstop > sizeZ) {
+                kstop = sizeZ;
+                kstart = kstop - kernel.length;
+            }
             ImageProcessor cip = new FloatProcessor(imp.getWidth(), imp.getHeight());
             System.out.println(k + " " + slice + " " + bestZ);
             float[] pix = new float[imp.getWidth()*imp.getHeight()];
-            int pindex = 0;
+
             for (int j = 0; j < ny; j++) {
                 for (int i = 0; i < nx; i++) {
                     //System.out.println(i + " " + j + " " + slice);
 
                     float[] zp = stack.getVoxels(i, j, slice, 1, 1, sizeZ, null);
                     double sum = 0;
-                    int index = 0;
-                    int ki = kstart;
-                    for (float p :zp) {
+
+                    int ki = 0; // for index of kernel
+                    //index for index of z profile
+                    for (int zi = kstart; zi < kstop; zi++) {
                         //do correlation here
                         // only need to do it for best
-                        if ((ki >= 0) & (ki < kstop)) {
-                            sum += p*kernel[index];
+                        if (zi >= zp.length) {
+                            break;
                         }
-                        index++;
-                        ki++;
+                        if ((zi >= 0) & (zi < kstop)) {
+                            float p = zp[zi];
+                            sum += p*kernel[ki];
+                            ki++;
+                        }
+
                         pix[j*nx + i] = (float)sum;
-                        pindex++;
 
                     }
                 }
@@ -87,9 +105,9 @@ public class ZCorrelation implements Command, Previewable {
         }
 
         ImagePlus cimp = new ImagePlus();
+        cimp.setTitle("ZCORR_" + imp.getTitle());
         cimp.setStack(corr_stack);
-        cimp.show();
-        return null;
+        return cimp;
     }
 
     private int calcBestZ(double[] zScores, int z0, int d) {
