@@ -72,8 +72,11 @@ public class ZCorrelation implements Command, Previewable {
             }
             ImageProcessor cip = new FloatProcessor(imp.getWidth(), imp.getHeight());
             System.out.println(k + " " + slice + " " + bestZ);
+            double[] dpix = new double[imp.getWidth()*imp.getHeight()];
             float[] pix = new float[imp.getWidth()*imp.getHeight()];
 
+            double pmax = -1.e20;
+            double pmin = 1e20;
             for (int j = 0; j < ny; j++) {
                 for (int i = 0; i < nx; i++) {
                     //System.out.println(i + " " + j + " " + slice);
@@ -95,13 +98,30 @@ public class ZCorrelation implements Command, Previewable {
                             ki++;
                         }
 
-                        pix[j*nx + i] = (float)sum;
+                        dpix[j*nx + i] = sum;
 
+                    }
+                    if (sum > pmax) {
+                        pmax = sum;
+                    } else if (sum < pmin) {
+                        pmin = sum;
                     }
                 }
             }
-            corr_stack.setPixels(pix, k + 1);
 
+            double px = -1e30;
+            double pm = 1e30;
+            for (int ii = 0; ii < dpix.length; ii++) {
+                double p = 2.0*(dpix[ii] - pmin)/(pmax - pmin) - 1.0;
+                if (p < pm) {
+                    pm = p;
+                } else if (p > px) {
+                    px = p;
+                }
+                pix[ii] = (float)p;
+            }
+            System.out.println(k + " " + px + " " + pm + " " + pmin + " " + pmax);
+            corr_stack.setPixels(pix, k + 1);
         }
 
         ImagePlus cimp = new ImagePlus();
