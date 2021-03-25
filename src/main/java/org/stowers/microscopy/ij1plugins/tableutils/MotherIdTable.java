@@ -1,7 +1,7 @@
 package org.stowers.microscopy.ij1plugins.tableutils;
 
 import ij.text.TextPanel;
-import javafx.scene.control.Cell;
+//import javafx.scene.control.Cell;
 
 import java.util.ArrayList;
 import java.util.InputMismatchException;
